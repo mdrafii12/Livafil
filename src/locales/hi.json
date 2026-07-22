@@ -1,0 +1,56 @@
+{
+  "sidebar": {
+    "dashboard": "डैशबोर्ड",
+    "billing": "बिलिंग",
+    "medicines": "दवाइयाँ",
+    "settings": "सेटिंग्स",
+    "logout": "लॉग आउट",
+    "refillReminders": "रिफिल रिमाइंडर"
+  },
+  "dashboard": {
+    "overview": "अवलोकन",
+    "totalSales": "कुल बिक्री",
+    "billsGenerated": "उत्पन्न बिल",
+    "lowStockItems": "कम स्टॉक आइटम",
+    "recentTransactions": "हाल के लेनदेन",
+    "viewAll": "सभी देखें",
+    "revenueTrend": "राजस्व की प्रवृत्ति"
+  },
+  "billing": {
+    "title": "बिलिंग सिस्टम",
+    "searchPlaceholder": "नाम से दवाइयाँ खोजें...",
+    "scanBarcode": "बारकोड स्कैन करें",
+    "checkout": "चेकआउट",
+    "history": "इतिहास",
+    "returns": "रिटर्न",
+    "cart": "कार्ट",
+    "emptyCart": "कार्ट खाली है",
+    "subtotal": "उप-योग",
+    "discount": "छूट",
+    "tax": "कर (12%)",
+    "grandTotal": "कुल राशि",
+    "paymentMethod": "भुगतान विकल्प",
+    "cash": "नकद",
+    "card": "कार्ड",
+    "upi": "UPI",
+    "dispensePrint": "बिल प्रिंट करें",
+    "customerInfo": "ग्राहक की जानकारी"
+  },
+  "medicines": {
+    "title": "इन्वेंटरी प्रबंधन",
+    "addMedicine": "दवा जोड़ें",
+    "search": "इन्वेंटरी खोजें...",
+    "name": "नाम",
+    "genericName": "सामान्य नाम",
+    "stock": "स्टॉक",
+    "mrp": "MRP",
+    "category": "श्रेणी",
+    "actions": "कार्रवाइयां"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "pharmacyProfile": "फार्मेसी प्रोफाइल",
+    "language": "भाषा",
+    "save": "परिवर्तन सहेजें"
+  }
+}

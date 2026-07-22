@@ -1,0 +1,56 @@
+{
+  "sidebar": {
+    "dashboard": "డాష్‌బోర్డ్",
+    "billing": "బిల్లింగ్",
+    "medicines": "మందులు",
+    "settings": "సెట్టింగులు",
+    "logout": "లాగౌట్",
+    "refillReminders": "రీఫిల్ రిమైండర్‌లు"
+  },
+  "dashboard": {
+    "overview": "అవలోకనం",
+    "totalSales": "మొత్తం అమ్మకాలు",
+    "billsGenerated": "సృష్టించిన బిల్లులు",
+    "lowStockItems": "తక్కువ స్టాక్ ఉన్నవి",
+    "recentTransactions": "ఇటీవలి లావాదేవీలు",
+    "viewAll": "అన్నీ చూడండి",
+    "revenueTrend": "ఆదాయ ధోరణి"
+  },
+  "billing": {
+    "title": "బిల్లింగ్ సిస్టమ్",
+    "searchPlaceholder": "పేరు ద్వారా మందుల కోసం వెతకండి...",
+    "scanBarcode": "బార్‌కోడ్ స్కాన్ చేయండి",
+    "checkout": "చెక్అవుట్",
+    "history": "చరిత్ర",
+    "returns": "రిటర్న్స్",
+    "cart": "కార్ట్",
+    "emptyCart": "కార్ట్ ఖాళీగా ఉంది",
+    "subtotal": "ఉపమొత్తం",
+    "discount": "డిస్కౌంట్",
+    "tax": "పన్ను (12%)",
+    "grandTotal": "మొత్తం",
+    "paymentMethod": "చెల్లింపు విధానం",
+    "cash": "నగదు",
+    "card": "కార్డు",
+    "upi": "UPI",
+    "dispensePrint": "బిల్లు ముద్రించండి",
+    "customerInfo": "కస్టమర్ సమాచారం"
+  },
+  "medicines": {
+    "title": "ఇన్వెంటరీ నిర్వహణ",
+    "addMedicine": "మందు జోడించండి",
+    "search": "ఇన్వెంటరీ శోధన...",
+    "name": "పేరు",
+    "genericName": "సాధారణ పేరు",
+    "stock": "స్టాక్",
+    "mrp": "MRP",
+    "category": "వర్గం",
+    "actions": "చర్యలు"
+  },
+  "settings": {
+    "title": "సెట్టింగులు",
+    "pharmacyProfile": "ఫార్మసీ ప్రొఫైల్",
+    "language": "భాష",
+    "save": "మార్పులను సేవ్ చేయండి"
+  }
+}

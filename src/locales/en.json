@@ -1,0 +1,56 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "billing": "Billing",
+    "medicines": "Medicines",
+    "settings": "Settings",
+    "logout": "Logout",
+    "refillReminders": "Refill Reminders"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "totalSales": "Total Sales",
+    "billsGenerated": "Bills Generated",
+    "lowStockItems": "Low Stock Items",
+    "recentTransactions": "Recent Transactions",
+    "viewAll": "View All",
+    "revenueTrend": "Revenue Trend"
+  },
+  "billing": {
+    "title": "Billing System",
+    "searchPlaceholder": "Search medicines by name or generic...",
+    "scanBarcode": "Scan Barcode",
+    "checkout": "Checkout",
+    "history": "History",
+    "returns": "Returns",
+    "cart": "Shopping Cart",
+    "emptyCart": "Cart is empty",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax (12%)",
+    "grandTotal": "Grand Total",
+    "paymentMethod": "Payment Option",
+    "cash": "Cash",
+    "card": "Card",
+    "upi": "UPI",
+    "dispensePrint": "Dispense & Print Receipt",
+    "customerInfo": "Customer Information"
+  },
+  "medicines": {
+    "title": "Inventory Management",
+    "addMedicine": "Add Medicine",
+    "search": "Search inventory...",
+    "name": "Name",
+    "genericName": "Generic Name",
+    "stock": "Stock",
+    "mrp": "MRP",
+    "category": "Category",
+    "actions": "Actions"
+  },
+  "settings": {
+    "title": "Settings",
+    "pharmacyProfile": "Pharmacy Profile",
+    "language": "Language",
+    "save": "Save Changes"
+  }
+}
