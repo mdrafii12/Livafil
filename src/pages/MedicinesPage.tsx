@@ -757,20 +757,46 @@ export default function MedicinesPage() {
                 </div>
               )}
 
-              <div className="text-xs bg-gray-50 dark:bg-gray-950 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
-                <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Required Headers Format:</p>
-                <code className="text-[10px] font-mono text-gray-500 block">
+              <div className="text-xs bg-gray-50 dark:bg-gray-950 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50 space-y-2">
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold text-gray-700 dark:text-gray-300">Required Headers Format:</p>
+                  <a 
+                    href="/demo_medicines_import.csv" 
+                    download="demo_medicines_import.csv"
+                    className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold flex items-center gap-1"
+                  >
+                    <Download className="w-3 h-3" /> Download Sample CSV
+                  </a>
+                </div>
+                <code className="text-[10px] font-mono text-gray-500 block bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-800">
                   Name, GenericName, Manufacturer, Strength, DosageForm, Barcode, PrescriptionRequired(TRUE/FALSE)
                 </code>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Paste CSV Lines Below</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Upload File or Paste CSV Below</label>
+                  <input 
+                    type="file" 
+                    accept=".csv"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          setImportText(evt.target?.result as string || '');
+                        };
+                        reader.readAsText(file);
+                      }
+                    }}
+                    className="text-[10px] text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950 dark:file:text-blue-300 cursor-pointer"
+                  />
+                </div>
                 <textarea 
                   rows={6}
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
-                  placeholder={`Lipitor, Atorvastatin, Pfizer, 20mg, Tablet, 30071101, TRUE\nPanadol, Acetaminophen, GSK, 500mg, Tablet, 10022311, FALSE`}
+                  placeholder={`Dolo 650, Paracetamol, Micro Labs, 650mg, Tablet, 890123456001, FALSE\nAugmentin 625 Duo, Amoxicillin + Clavulanic Acid, GSK, 625mg, Tablet, 890123456003, TRUE`}
                   className="w-full p-3 font-mono text-xs rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500"
                 ></textarea>
               </div>
