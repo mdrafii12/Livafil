@@ -14,142 +14,36 @@ const SEED_CATEGORIES: Category[] = [
   { id: 'cat-1', name: 'Analgesics', description: 'Pain relief medicines', color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50', createdAt: new Date().toISOString() },
   { id: 'cat-2', name: 'Antibiotics', description: 'Bacterial infection treatments', color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50', createdAt: new Date().toISOString() },
   { id: 'cat-3', name: 'Cardiovascular', description: 'Heart and blood pressure', color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50', createdAt: new Date().toISOString() },
-  { id: 'cat-4', name: 'Pediatric', description: 'Child-specific dosages', color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50', createdAt: new Date().toISOString() },
-  { id: 'cat-5', name: 'Respiratory', description: 'Asthma and lung care', color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50', createdAt: new Date().toISOString() },
+  { id: 'cat-4', name: 'Diabetes', description: 'Blood sugar management', color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50', createdAt: new Date().toISOString() },
+  { id: 'cat-5', name: 'Gastrointestinal', description: 'Stomach and digestive care', color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50', createdAt: new Date().toISOString() },
 ];
 
-// Default seed suppliers
-const SEED_SUPPLIERS: Supplier[] = [
-  { id: 'sup-1', name: 'Apex Pharma Distributors', contactPerson: 'John Miller', phone: '+1 (555) 123-4567', email: 'orders@apexpharma.com', address: '102 Medical Park Plaza, Suite B, New York, NY', gst: '22AAAAA1111A1Z1', createdAt: new Date().toISOString() },
-  { id: 'sup-2', name: 'Beacon Health Wholesale', contactPerson: 'Sarah Jenkins', phone: '+1 (555) 987-6543', email: 'sarah@beaconhealth.com', address: '45 Industrial Pkwy, Chicago, IL', gst: '22BBBBB2222B2Z2', createdAt: new Date().toISOString() },
-  { id: 'sup-3', name: 'Lifeline Pharmaceuticals', contactPerson: 'Robert Chen', phone: '+1 (555) 234-5678', email: 'r.chen@lifelinepharma.com', address: '888 Logistics Blvd, Los Angeles, CA', gst: '22CCCCC3333C3Z3', createdAt: new Date().toISOString() },
-];
+// Default seed suppliers (Clean real state)
+const SEED_SUPPLIERS: Supplier[] = [];
 
-// Default seed medicines
-const SEED_MEDICINES: Medicine[] = [
-  { id: 'med-1', name: 'Lipitor', genericName: 'Atorvastatin Calcium', manufacturer: 'Pfizer Inc.', strength: '20mg', dosageForm: 'Tablet', barcode: '300711015682', categoryId: 'cat-3', prescriptionRequired: true, createdAt: new Date().toISOString() },
-  { id: 'med-2', name: 'Amoxil', genericName: 'Amoxicillin', manufacturer: 'GlaxoSmithKline', strength: '500mg', dosageForm: 'Capsule', barcode: '300060123456', categoryId: 'cat-2', prescriptionRequired: true, createdAt: new Date().toISOString() },
-  { id: 'med-3', name: 'Tylenol Extra Strength', genericName: 'Acetaminophen', manufacturer: 'Johnson & Johnson', strength: '500mg', dosageForm: 'Tablet', barcode: '050522000213', categoryId: 'cat-1', prescriptionRequired: false, createdAt: new Date().toISOString() },
-  { id: 'med-4', name: 'Singulair', genericName: 'Montelukast Sodium', manufacturer: 'Merck & Co.', strength: '10mg', dosageForm: 'Tablet', barcode: '000060275612', categoryId: 'cat-5', prescriptionRequired: true, createdAt: new Date().toISOString() },
-  { id: 'med-5', name: 'Infant Tylenol', genericName: 'Acetaminophen Suspension', manufacturer: 'Johnson & Johnson', strength: '160mg/5mL', dosageForm: 'Suspension', barcode: '300450123987', categoryId: 'cat-4', prescriptionRequired: false, createdAt: new Date().toISOString() },
-];
+// Default seed medicines (Clean real state)
+const SEED_MEDICINES: Medicine[] = [];
 
-// Helper to shift dates relative to current date for beautiful data presentation
+// Helper to shift dates relative to current date
 const getRelativeDate = (daysOffset: number): string => {
   const d = new Date();
   d.setDate(d.getDate() + daysOffset);
   return d.toISOString().split('T')[0];
 };
 
-// Default seed batches
-const SEED_BATCHES: Batch[] = [
-  {
-    id: 'bat-1',
-    medicineId: 'med-1',
-    batchNumber: 'LIP-882A',
-    quantity: 450,
-    purchasePrice: 12.50,
-    sellingPrice: 22.00,
-    mrp: 25.00,
-    expiryDate: getRelativeDate(180), // Expiring in ~6 months (Active)
-    manufactureDate: getRelativeDate(-180),
-    receivedDate: getRelativeDate(-150),
-    supplierId: 'sup-1',
-    minimumStock: 100,
-    notes: 'Primary stock for Lipitor 20mg.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bat-2',
-    medicineId: 'med-2',
-    batchNumber: 'AMX-441X',
-    quantity: 45, // Low stock (min is 150)
-    purchasePrice: 4.20,
-    sellingPrice: 8.50,
-    mrp: 10.00,
-    expiryDate: getRelativeDate(25), // Expiring in 25 days (Expiring soon!)
-    manufactureDate: getRelativeDate(-200),
-    receivedDate: getRelativeDate(-180),
-    supplierId: 'sup-2',
-    minimumStock: 150,
-    notes: 'Urgent: low stock and expiring soon. Plan for recovery.',
-    status: 'Expiring',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bat-3',
-    medicineId: 'med-3',
-    batchNumber: 'TYL-201B',
-    quantity: 1200,
-    purchasePrice: 1.50,
-    sellingPrice: 3.50,
-    mrp: 4.00,
-    expiryDate: getRelativeDate(-15), // Expired 15 days ago!
-    manufactureDate: getRelativeDate(-380),
-    receivedDate: getRelativeDate(-350),
-    supplierId: 'sup-3',
-    minimumStock: 200,
-    notes: 'Expired stock. Needs disposal or recovery discount channel.',
-    status: 'Expired',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bat-4',
-    medicineId: 'med-4',
-    batchNumber: 'SNG-552T',
-    quantity: 350,
-    purchasePrice: 8.00,
-    sellingPrice: 15.00,
-    mrp: 18.00,
-    expiryDate: getRelativeDate(45), // Expiring in 45 days
-    manufactureDate: getRelativeDate(-150),
-    receivedDate: getRelativeDate(-120),
-    supplierId: 'sup-1',
-    minimumStock: 50,
-    notes: 'Monitor expiration. Category: Respiratory.',
-    status: 'Expiring',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bat-5',
-    medicineId: 'med-5',
-    batchNumber: 'PNT-331Y',
-    quantity: 0, // Out of stock
-    purchasePrice: 3.10,
-    sellingPrice: 6.99,
-    mrp: 7.50,
-    expiryDate: getRelativeDate(300),
-    manufactureDate: getRelativeDate(-60),
-    receivedDate: getRelativeDate(-45),
-    supplierId: 'sup-2',
-    minimumStock: 80,
-    notes: 'Completely out of stock.',
-    status: 'Out of Stock',
-    createdAt: new Date().toISOString()
-  }
-];
+// Default seed batches (Clean real state)
+const SEED_BATCHES: Batch[] = [];
 
-// Seed inventory movements
-const SEED_MOVEMENTS: Movement[] = [
-  { id: 'mov-1', batchId: 'bat-1', medicineId: 'med-1', type: 'Purchase', quantity: 500, timestamp: getRelativeDate(-150) + 'T09:30:00Z', createdBy: 'Mohammed Rafii', notes: 'Initial receipt of batch LIP-882A' },
-  { id: 'mov-2', batchId: 'bat-1', medicineId: 'med-1', type: 'Sale', quantity: -50, timestamp: getRelativeDate(-10) + 'T14:15:00Z', createdBy: 'Mohammed Rafii', notes: 'Standard prescriptions dispensed' },
-  { id: 'mov-3', batchId: 'bat-2', medicineId: 'med-2', type: 'Purchase', quantity: 100, timestamp: getRelativeDate(-180) + 'T11:00:00Z', createdBy: 'Mohammed Rafii' },
-  { id: 'mov-4', batchId: 'bat-2', medicineId: 'med-2', type: 'Sale', quantity: -55, timestamp: getRelativeDate(-5) + 'T16:45:00Z', createdBy: 'Mohammed Rafii' },
-  { id: 'mov-5', batchId: 'bat-3', medicineId: 'med-3', type: 'Purchase', quantity: 1200, timestamp: getRelativeDate(-350) + 'T08:00:00Z', createdBy: 'System' },
-];
+// Seed inventory movements (Clean real state)
+const SEED_MOVEMENTS: Movement[] = [];
 
-// Seed notifications
-const SEED_NOTIFICATIONS: Notification[] = [
-  { id: 'not-1', title: 'Medicine Expired', message: 'Batch TYL-201B of Tylenol Extra Strength expired on ' + getRelativeDate(-15), type: 'expiry', timestamp: new Date(Date.now() - 3600000 * 24 * 15).toISOString(), read: false },
-  { id: 'not-2', title: 'Stock Expiring Soon', message: 'Batch AMX-441X of Amoxil (45 caps remaining) will expire in 25 days.', type: 'expiry', timestamp: new Date(Date.now() - 3600000 * 3).toISOString(), read: false },
-  { id: 'not-3', title: 'Low Stock Alert', message: 'Amoxil has fallen below its minimum stock of 150 units.', type: 'low_stock', timestamp: new Date(Date.now() - 3600000 * 5).toISOString(), read: false },
-];
+// Seed notifications (Clean real state)
+const SEED_NOTIFICATIONS: Notification[] = [];
 
 const DEFAULT_SETTINGS: SystemSettings = {
   general: {
-    pharmacyName: 'MedGuard Rx',
-    timezone: 'UTC-5',
+    pharmacyName: 'LIVAFIL Pharmacy',
+    timezone: 'Asia/Kolkata',
     currency: 'INR'
   },
   appearance: {
@@ -175,91 +69,46 @@ const SEED_OWNER: User = {
 
 const SEED_PHARMACY: Pharmacy = {
   id: 'phar-1',
-  name: 'MedGuard Rx Headquarters',
+  name: 'LIVAFIL Pharmacy Main Branch',
   ownerName: 'Mohammed Rafii',
-  licenseNumber: 'PH-NY-2026-9912',
-  gst: '22ABCDE1234F1Z9',
-  phone: '+1 (555) 777-8888',
-  email: 'contact@medguardrx.com',
-  address: '500 Fifth Avenue, Floor 45',
-  state: 'New York',
-  district: 'New York County',
-  city: 'New York City',
-  pincode: '10110',
+  licenseNumber: 'PH-2026-LIVAFIL',
+  gst: '36AAAAA0000A1Z5',
+  phone: '+91 9876543210',
+  email: 'support@livafil.com',
+  address: 'Main Road, Commercial Center',
+  state: 'Telangana',
+  district: 'Hyderabad',
+  city: 'Hyderabad',
+  pincode: '500001',
   createdAt: new Date().toISOString()
 };
 
 // Helper keys for LocalStorage
 const STORAGE_KEYS = {
-  USERS: 'medguard_users',
-  PHARMACY: 'medguard_pharmacy',
-  CATEGORIES: 'medguard_categories',
-  SUPPLIERS: 'medguard_suppliers',
-  MEDICINES: 'medguard_medicines',
-  BATCHES: 'medguard_batches',
-  MOVEMENTS: 'medguard_movements',
-  NOTIFICATIONS: 'medguard_notifications',
-  SETTINGS: 'medguard_settings',
-  CURRENT_USER: 'medguard_current_user',
-  ONBOARDED: 'medguard_onboarded',
-  EXCHANGE_LISTINGS: 'medguard_exchange_listings',
-  NEED_MEDICINES: 'medguard_need_medicines',
-  EXCHANGE_REQUESTS: 'medguard_exchange_requests',
-  EXCHANGE_ACTIVITY: 'medguard_exchange_activity',
-  AUDIT_LOGS: 'medguard_audit_logs',
-  SUBSCRIPTION: 'medguard_subscription',
-  SUPPORT_TICKETS: 'medguard_support_tickets',
-  FEATURE_FLAGS: 'medguard_feature_flags',
-  BILLS: 'medguard_bills',
+  USERS: 'livafil_users',
+  PHARMACY: 'livafil_pharmacy',
+  CATEGORIES: 'livafil_categories',
+  SUPPLIERS: 'livafil_suppliers',
+  MEDICINES: 'livafil_medicines',
+  BATCHES: 'livafil_batches',
+  MOVEMENTS: 'livafil_movements',
+  NOTIFICATIONS: 'livafil_notifications',
+  SETTINGS: 'livafil_settings',
+  CURRENT_USER: 'livafil_current_user',
+  ONBOARDED: 'livafil_onboarded',
+  EXCHANGE_LISTINGS: 'livafil_exchange_listings',
+  NEED_MEDICINES: 'livafil_need_medicines',
+  EXCHANGE_REQUESTS: 'livafil_exchange_requests',
+  EXCHANGE_ACTIVITY: 'livafil_exchange_activity',
+  AUDIT_LOGS: 'livafil_audit_logs',
+  SUBSCRIPTION: 'livafil_subscription',
+  SUPPORT_TICKETS: 'livafil_support_tickets',
+  FEATURE_FLAGS: 'livafil_feature_flags',
+  BILLS: 'livafil_bills',
 };
 
 // Seed audit logs
-const SEED_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'log-1',
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    username: 'Mohammed Rafii',
-    role: 'Owner',
-    category: 'Security',
-    action: 'User Login',
-    details: 'Logged in successfully via secure 2FA Web Browser session',
-    ipAddress: '198.51.100.42',
-    device: 'Chrome 118 on macOS Big Sur (Desktop)'
-  },
-  {
-    id: 'log-2',
-    timestamp: new Date(Date.now() - 3600000 * 4.5).toISOString(),
-    username: 'Mohammed Rafii',
-    role: 'Owner',
-    category: 'Inventory',
-    action: 'Add Batch',
-    details: 'Received new inventory batch LIP-882A (450 units) for Lipitor 20mg',
-    ipAddress: '198.51.100.42',
-    device: 'Chrome 118 on macOS Big Sur (Desktop)'
-  },
-  {
-    id: 'log-3',
-    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-    username: 'Mohammed Rafii',
-    role: 'Owner',
-    category: 'Exchange',
-    action: 'Create Listing',
-    details: 'Listed surplus inventory AMX-441X of Amoxil 500mg (45 units) on network',
-    ipAddress: '198.51.100.42',
-    device: 'Chrome 118 on macOS Big Sur (Desktop)'
-  },
-  {
-    id: 'log-4',
-    timestamp: new Date(Date.now() - 3600000 * 30).toISOString(),
-    username: 'Mohammed Rafii',
-    role: 'Owner',
-    category: 'Subscription',
-    action: 'Upgrade Plan',
-    details: `Upgraded subscription from Starter to Professional Tier (${formatCurrency(149)}/mo)`,
-    ipAddress: '198.51.100.42',
-    device: 'Chrome 118 on macOS Big Sur (Desktop)'
-  }
-];
+const SEED_AUDIT_LOGS: AuditLog[] = [];
 
 // Seed subscription
 const SEED_SUBSCRIPTION: Subscription = {
@@ -268,48 +117,18 @@ const SEED_SUBSCRIPTION: Subscription = {
   trialEnd: getRelativeDate(14),
   billingCycle: 'Monthly',
   currentPeriodEnd: getRelativeDate(25),
-  billingHistory: [
-    { id: 'inv-9921', date: getRelativeDate(-5), amount: 149.00, plan: 'Professional', status: 'Paid' },
-    { id: 'inv-9810', date: getRelativeDate(-35), amount: 149.00, plan: 'Professional', status: 'Paid' }
-  ]
+  billingHistory: []
 };
 
 // Seed tickets
-const SEED_TICKETS: SupportTicket[] = [
-  {
-    id: 'tkt-1',
-    title: 'B2B Exchange Masking Verification',
-    category: 'Technical',
-    priority: 'High',
-    description: 'We accepted a swap for Amoxicillin but the mask option on our telephone number is not showing contact credentials properly.',
-    status: 'In Progress',
-    createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-    replies: [
-      { sender: 'Mohammed Rafii', message: 'Hello, our staff cannot see the full phone number of Beacon Health.', timestamp: new Date(Date.now() - 3600000 * 4).toISOString() },
-      { sender: 'MedGuard Agent', message: 'Hi Mohammed, we are verifying Beacon Health’s active license to secure the HIPAA disclosure channel. It will resolve in 10 minutes.', timestamp: new Date(Date.now() - 3600000 * 3.5).toISOString() }
-    ]
-  },
-  {
-    id: 'tkt-2',
-    title: 'Add support for bulk CSV supplier ingest',
-    category: 'Feature Request',
-    priority: 'Medium',
-    description: 'It would be amazing to support bulk importing of drug inventory categories from standard CSV exports.',
-    status: 'Resolved',
-    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-    replies: [
-      { sender: 'Mohammed Rafii', message: 'Suggesting CSV supplier uploads.', timestamp: new Date(Date.now() - 3600000 * 48).toISOString() },
-      { sender: 'MedGuard Support', message: 'This feature has been deployed in v2.4.1 under Categories and Suppliers management!', timestamp: new Date(Date.now() - 3600000 * 24).toISOString() }
-    ]
-  }
-];
+const SEED_TICKETS: SupportTicket[] = [];
 
 // Seed feature flags
 const SEED_FEATURE_FLAGS: FeatureFlag[] = [
   { key: 'enable_auto_discounts', name: 'AI Expiry Smart Discounts', description: 'Enable automatic price-markdown suggestions for batches expiring within 45 days', enabled: true, category: 'Inventory' },
-  { key: 'enable_whatsapp_sync', name: 'WhatsApp Dispatch Integrations', description: 'Send instant delivery notification alerts via secure WhatsApp B2B Gateway', enabled: false, category: 'Communication' },
+  { key: 'enable_whatsapp_sync', name: 'WhatsApp Dispatch Integrations', description: 'Send instant delivery notification alerts via secure WhatsApp Gateway', enabled: true, category: 'Communication' },
   { key: 'enable_b2b_matching', name: 'Proximity Match Engine v2', description: 'Auto-pair listing surplus with partner open requested needs', enabled: true, category: 'Exchange' },
-  { key: 'strict_hipaa_compliance', name: 'HIPAA Shield Guarding', description: 'Force masking of pharmacy contact details until reciprocal double-opt-in', enabled: true, category: 'Security' }
+  { key: 'strict_hipaa_compliance', name: 'Security Guarding', description: 'Force masking of pharmacy contact details until reciprocal double-opt-in', enabled: true, category: 'Security' }
 ];
 
 export class LocalDB {
@@ -367,194 +186,19 @@ export class LocalDB {
 
     // --- SEED EXCHANGE DATA ---
     if (!localStorage.getItem(STORAGE_KEYS.EXCHANGE_LISTINGS)) {
-      const seedListings: ExchangeListing[] = [
-        {
-          id: 'list-seed-1',
-          pharmacyId: 'phar-apex',
-          pharmacyName: 'Apex Care Pharmacy',
-          medicineId: 'med-1',
-          medicineName: 'Lipitor',
-          genericName: 'Atorvastatin Calcium',
-          strength: '20mg',
-          manufacturer: 'Pfizer Inc.',
-          batchNumber: 'LIP-991B',
-          quantity: 100,
-          expiryDate: getRelativeDate(60),
-          mrp: 25.00,
-          sellingPrice: 15.00,
-          discountPercentage: 40,
-          minimumOrder: 10,
-          reason: 'Near Expiry',
-          notes: 'Moving fast. Selling below wholesales cost to recover capital.',
-          status: 'Active',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'list-seed-2',
-          pharmacyId: 'phar-beacon',
-          pharmacyName: 'Beacon Rx Pharmacy',
-          medicineId: 'med-2',
-          medicineName: 'Amoxil',
-          genericName: 'Amoxicillin',
-          strength: '500mg',
-          manufacturer: 'GlaxoSmithKline',
-          batchNumber: 'AMX-882C',
-          quantity: 300,
-          expiryDate: getRelativeDate(95),
-          mrp: 10.00,
-          sellingPrice: 6.00,
-          discountPercentage: 40,
-          minimumOrder: 20,
-          reason: 'Overstock',
-          notes: 'Excess stock from seasonal order surplus.',
-          status: 'Active',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'list-seed-3',
-          pharmacyId: 'phar-lifeline',
-          pharmacyName: 'Lifeline Rx Branch',
-          medicineId: 'med-4',
-          medicineName: 'Singulair',
-          genericName: 'Montelukast Sodium',
-          strength: '10mg',
-          manufacturer: 'Merck & Co.',
-          batchNumber: 'SNG-771K',
-          quantity: 80,
-          expiryDate: getRelativeDate(45),
-          mrp: 18.00,
-          sellingPrice: 9.00,
-          discountPercentage: 50,
-          minimumOrder: 5,
-          reason: 'Slow Moving',
-          notes: 'Willing to negotiate on complete clearance.',
-          status: 'Active',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'list-seed-4',
-          pharmacyId: 'phar-stjude',
-          pharmacyName: 'St. Jude Clinic Pharmacy',
-          medicineId: 'med-3',
-          medicineName: 'Tylenol Extra Strength',
-          genericName: 'Acetaminophen',
-          strength: '500mg',
-          manufacturer: 'Johnson & Johnson',
-          batchNumber: 'TYL-441D',
-          quantity: 500,
-          expiryDate: getRelativeDate(120),
-          mrp: 4.00,
-          sellingPrice: 2.00,
-          discountPercentage: 50,
-          minimumOrder: 50,
-          reason: 'Overstock',
-          notes: 'Bulk stock clearance.',
-          status: 'Active',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'list-user-1',
-          pharmacyId: 'phar-1',
-          pharmacyName: 'MedGuard Rx Headquarters',
-          medicineId: 'med-2',
-          medicineName: 'Amoxil',
-          genericName: 'Amoxicillin',
-          strength: '500mg',
-          manufacturer: 'GlaxoSmithKline',
-          batchNumber: 'AMX-441X',
-          quantity: 45,
-          expiryDate: getRelativeDate(25),
-          mrp: 10.00,
-          sellingPrice: 7.00,
-          discountPercentage: 30,
-          minimumOrder: 10,
-          reason: 'Near Expiry',
-          notes: 'Surplus short-dated stock. Seeking urgent B2B exchange with local partners.',
-          status: 'Active',
-          createdAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.EXCHANGE_LISTINGS, JSON.stringify(seedListings));
+      localStorage.setItem(STORAGE_KEYS.EXCHANGE_LISTINGS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.NEED_MEDICINES)) {
-      const seedNeeds: NeedMedicine[] = [
-        {
-          id: 'need-seed-1',
-          pharmacyId: 'phar-apex',
-          pharmacyName: 'Apex Care Pharmacy',
-          medicineName: 'Amoxil',
-          strength: '500mg',
-          manufacturer: 'GlaxoSmithKline',
-          requiredQuantity: 100,
-          maximumPrice: 8.50,
-          requiredBefore: getRelativeDate(30),
-          notes: 'Urgently needed for local pediatric clinic prescription campaign.',
-          status: 'Open',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'need-seed-2',
-          pharmacyId: 'phar-beacon',
-          pharmacyName: 'Beacon Rx Pharmacy',
-          medicineName: 'Lipitor',
-          strength: '20mg',
-          manufacturer: 'Pfizer Inc.',
-          requiredQuantity: 200,
-          maximumPrice: 24.00,
-          requiredBefore: getRelativeDate(90),
-          notes: 'High demand area. Looking for bulk discount transfer.',
-          status: 'Open',
-          createdAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.NEED_MEDICINES, JSON.stringify(seedNeeds));
+      localStorage.setItem(STORAGE_KEYS.NEED_MEDICINES, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.EXCHANGE_REQUESTS)) {
-      const seedRequests: ExchangeRequest[] = [
-        {
-          id: 'req-seed-1',
-          listingId: 'list-user-1',
-          buyerPharmacyId: 'phar-beacon',
-          buyerPharmacyName: 'Beacon Rx Pharmacy',
-          buyerContactEmail: 'sarah@beaconhealth.com',
-          buyerContactPhone: '+1 (555) 987-6543',
-          buyerAddress: '45 Industrial Pkwy, Chicago, IL',
-          sellerPharmacyId: 'phar-1',
-          status: 'Pending',
-          notes: 'We can purchase this entire batch if you can offer free shipping or counter-offer.',
-          createdAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.EXCHANGE_REQUESTS, JSON.stringify(seedRequests));
+      localStorage.setItem(STORAGE_KEYS.EXCHANGE_REQUESTS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.EXCHANGE_ACTIVITY)) {
-      const seedActivity: ExchangeActivity[] = [
-        {
-          id: 'act-1',
-          pharmacyId: 'phar-apex',
-          type: 'listing_created',
-          message: 'Apex Care Pharmacy listed 100 units of Lipitor 20mg on the exchange.',
-          timestamp: getRelativeDate(-1) + 'T10:00:00Z'
-        },
-        {
-          id: 'act-2',
-          pharmacyId: 'phar-beacon',
-          type: 'need_created',
-          message: 'Beacon Rx Pharmacy requested 200 units of Lipitor 20mg.',
-          timestamp: getRelativeDate(-1) + 'T11:30:00Z'
-        },
-        {
-          id: 'act-3',
-          pharmacyId: 'phar-1',
-          type: 'match_found',
-          message: 'Matching system identified 2 mutual clearance alignments within 15 km.',
-          timestamp: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.EXCHANGE_ACTIVITY, JSON.stringify(seedActivity));
+      localStorage.setItem(STORAGE_KEYS.EXCHANGE_ACTIVITY, JSON.stringify([]));
     }
   }
 

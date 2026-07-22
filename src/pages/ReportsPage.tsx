@@ -172,7 +172,7 @@ useEffect(() => {
       return;
     }
     
-    const pharmacyName = myPharmacy?.name || 'MedGuard Rx';
+    const pharmacyName = myPharmacy?.name || 'LIVAFIL Pharmacy';
     
     // Generate text message for WhatsApp
     const message = `*PURCHASE ORDER*\nFrom: ${pharmacyName}\n\nHi ${r.supplierName},\nPlease arrange the following order:\n\n*Medicine:* ${r.medicineName}\n*Quantity Required:* ${r.recommendedReorderQty} units\n\nPlease confirm availability and delivery time.\n\nThanks,\n${pharmacyName}`;
@@ -260,7 +260,7 @@ useEffect(() => {
  const handleExportPDF = () => {
     const pharma = myPharmacy;
     let text = `========================================================\n`;
-    text += `             MEDGUARD PHARMACY LOSS AUDIT SHEET\n`;
+    text += `             LIVAFIL PHARMACY LOSS AUDIT SHEET\n`;
     text += `========================================================\n`;
     text += `Pharmacy: ${pharma?.name || 'Pharmacy Audit'}\n`;
     text += `GSTIN: ${pharma?.gst || 'N/A'}\n`;

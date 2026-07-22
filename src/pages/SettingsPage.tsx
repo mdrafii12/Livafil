@@ -177,7 +177,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
       const razorpay = new (window as any).Razorpay({
         key: keyId,
         subscription_id: subscriptionId,
-        name: 'MedGuard',
+        name: 'LIVAFIL',
         description: `${plan} Plan Subscription`,
         handler: async () => {
           const updated = await db.getMySubscription(profile.pharmacy_id!);
