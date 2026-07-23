@@ -73,7 +73,7 @@ export default function MedicinesPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<MedicineFormValues>({
-    resolver: zodResolver(medicineSchema),
+    resolver: zodResolver(medicineSchema) as any,
   });
 
   const watchAddInitialStock = watch('addInitialStock');
@@ -140,23 +140,35 @@ export default function MedicinesPage() {
     setFormOpen(true);
   };
 
-  const onSubmitForm = async (data: MedicineFormValues) => {
+  const onSubmitForm = async (data: any) => {
     setIsLoading(true);
     try {
       if (!profile?.pharmacy_id) throw new Error('No pharmacy linked to this account.');
+      const medData = {
+        name: data.name,
+        genericName: data.genericName,
+        manufacturer: data.manufacturer,
+        strength: data.strength,
+        dosageForm: data.dosageForm,
+        barcode: data.barcode,
+        categoryId: data.categoryId || '',
+        prescriptionRequired: Boolean(data.prescriptionRequired),
+        refillIntervalDays: data.refillIntervalDays ? Number(data.refillIntervalDays) : null,
+      };
+
       if (editingMed) {
-        await db.updateMedicine(editingMed.id, data);
+        await db.updateMedicine(editingMed.id, medData);
         showNotification('success', `Medicine "${data.name}" updated successfully.`);
       } else {
-        const newMed = await db.addMedicine(profile.pharmacy_id, data);
+        const newMed = await db.addMedicine(profile.pharmacy_id, medData);
         if (data.addInitialStock && data.batchNumber && data.quantity && data.supplierId && data.expiryDate) {
           await db.addBatch(profile.pharmacy_id, profile.id, {
             medicineId: newMed.id,
             batchNumber: data.batchNumber,
-            quantity: data.quantity,
-            purchasePrice: data.purchasePrice || 0,
-            sellingPrice: data.sellingPrice || 0,
-            mrp: data.mrp || 0,
+            quantity: Number(data.quantity),
+            purchasePrice: Number(data.purchasePrice) || 0,
+            sellingPrice: Number(data.sellingPrice) || 0,
+            mrp: Number(data.mrp) || 0,
             expiryDate: data.expiryDate,
             manufactureDate: '',
             receivedDate: new Date().toISOString().split('T')[0],

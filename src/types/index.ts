@@ -359,4 +359,59 @@ export interface Prescription {
   updatedAt: string;
 }
 
+// ==========================================
+// PHASE 5: OUT-PATIENT (OPD) INTERFACES
+// ==========================================
+
+export interface Patient {
+  id: string;
+  pharmacyId: string;
+  uhid: string; // e.g. "OP-2026-1001"
+  name: string;
+  phone: string;
+  gender: 'Male' | 'Female' | 'Other';
+  age: number;
+  bloodGroup?: string;
+  address?: string;
+  allergies?: string;
+  chronicConditions?: string;
+  createdAt: string;
+}
+
+export interface OpPrescriptionItem {
+  medicineId: string;
+  medicineName: string;
+  dosage: string; // e.g. "1-0-1 After Food"
+  durationDays: number;
+  quantity: number;
+  notes?: string;
+}
+
+export type OpConsultationStatus = 'Waiting' | 'Consulting' | 'Completed' | 'Sent to POS';
+
+export interface OpConsultation {
+  id: string;
+  pharmacyId: string;
+  uhid: string;
+  patientName: string;
+  patientPhone: string;
+  gender: 'Male' | 'Female' | 'Other';
+  age: number;
+  doctorName: string;
+  vitals?: {
+    bp?: string;
+    pulse?: number;
+    temp?: number;
+    weight?: number;
+    sugar?: number;
+  };
+  diagnosis?: string;
+  medicines: OpPrescriptionItem[];
+  consultationFee: number;
+  tokenNumber: string;
+  status: OpConsultationStatus;
+  createdAt: string;
+}
+
+
 

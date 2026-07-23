@@ -393,7 +393,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Pharmacy Corporate Name</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Hospital / Clinic / Pharmacy Name</label>
                   <input 
                     type="text"
                     {...regPharmacy('name')}
@@ -519,7 +519,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
               </div>
 
               {/* Desktop App Download (Gated) */}
-              {subscription?.plan && subscription.plan !== 'Free Trial' && subscription.plan !== 'Free' && (
+              {subscription?.plan && subscription.plan !== 'Free Trial' && (
                 <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">

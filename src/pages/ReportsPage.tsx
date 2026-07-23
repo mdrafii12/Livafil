@@ -186,7 +186,6 @@ useEffect(() => {
         quantity: r.recommendedReorderQty,
         status: 'Sent'
       });
-      window.open(waUrl, '_blank');
       showToast('success', `Purchase order logged and sent to ${r.supplierName}`);
     } catch (err: any) {
       showToast('error', `Failed to create PO: ${err.message}`);

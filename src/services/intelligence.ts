@@ -463,12 +463,12 @@ static getLowStock(batches: Batch[], medicines: Medicine[], suppliers: Supplier[
           minimumStock: stats.minStock,
           recommendedReorderQty,
           supplierName,
-          supplierId,
-          supplierPhone
+          supplierId: supplierId || '',
+          supplierPhone: supplierPhone || ''
         };
       })
-      .filter((item): item is LowStockItem => item !== null)
-      .sort((a, b) => (a.currentStock / (a.minimumStock || 1)) - (b.currentStock / (b.minimumStock || 1)));
+      .filter((item): item is any => item !== null)
+      .sort((a, b) => (a.currentStock / (a.minimumStock || 1)) - (b.currentStock / (b.minimumStock || 1))) as LowStockItem[];
   }
 
   /**

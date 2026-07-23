@@ -40,7 +40,7 @@ export default function RemindersPage() {
   const handleSendReminder = async (r: ReminderSchedule) => {
     setUpdatingId(r.id);
     try {
-      const pharmacyName = profile?.pharmacy_name || 'your pharmacy';
+      const pharmacyName = (profile as any)?.pharmacy_name || 'LIVAFIL Pharmacy';
       const message = `Hi ${r.customerName}, your ${r.medicineName} refill may be due soon. Reply to reorder or visit ${pharmacyName}.`;
       
       // Update status in DB

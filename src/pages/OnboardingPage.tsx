@@ -234,14 +234,14 @@ const onSubmit = async (data: OnboardingFormValues) => {
 
                 <div>
                   <label htmlFor="name" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-                    Pharmacy Legal Name
+                    Hospital / Clinic / Pharmacy Legal Name
                   </label>
                   <input
                     id="name"
                     type="text"
                     {...register('name')}
                     className="block w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                    placeholder="E.g. Oakwood Medical Pharmacy"
+                    placeholder="E.g. Oakwood Care Hospital & Pharmacy"
                   />
                   {errors.name && (
                     <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>

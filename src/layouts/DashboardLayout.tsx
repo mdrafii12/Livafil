@@ -5,7 +5,7 @@ import {
   History, BarChart4, Users, Settings, Bell, Search, 
   Sun, Moon, Menu, X, ChevronDown, LogOut, Check, Trash2, 
   User as UserIcon, Building2, Eye, CircleAlert, ArrowLeftRight,
-  Coins, ShieldAlert, HelpCircle, Receipt, Globe, AlarmClock
+  Coins, ShieldAlert, HelpCircle, Receipt, Globe, AlarmClock, Stethoscope
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
@@ -98,6 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const menuItems = [
     { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'billing', label: 'Quick Billing', path: '/billing', icon: Receipt, roles: ['Owner', 'Manager', 'Staff'] },
+    { name: 'opd', label: 'Out-Patient (OPD)', path: '/opd', icon: Stethoscope, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'refillReminders', label: 'Refill Reminders', path: '/reminders', icon: AlarmClock, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'medicines', label: 'Medicines', path: '/medicines', icon: Pill, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'categories', label: 'Categories', path: '/categories', icon: Tags, roles: ['Owner', 'Manager', 'Staff'] },

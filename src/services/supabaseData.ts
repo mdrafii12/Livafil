@@ -1445,3 +1445,196 @@ export async function getPrescriptions(pharmacyId: string): Promise<import('../t
   if (error) throw error;
   return (data ?? []).map(mapPrescription);
 }
+
+// --- OPD / OUT-PATIENT SYSTEM SERVICES ---
+
+const STORAGE_PATIENTS_KEY = 'livafil_opd_patients';
+const STORAGE_CONSULTATIONS_KEY = 'livafil_opd_consultations';
+
+export async function getPatients(pharmacyId: string): Promise<import('../types').Patient[]> {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((row: any) => ({
+        id: row.id,
+        pharmacyId: row.pharmacy_id,
+        uhid: row.uhid,
+        name: row.name,
+        phone: row.phone,
+        gender: row.gender,
+        age: row.age,
+        bloodGroup: row.blood_group,
+        address: row.address,
+        allergies: row.allergies,
+        chronicConditions: row.chronic_conditions,
+        createdAt: row.created_at,
+      }));
+    }
+  } catch (err) {
+    // Fallback to local storage if table doesn't exist
+  }
+
+  const raw = localStorage.getItem(`${STORAGE_PATIENTS_KEY}_${pharmacyId}`);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) {}
+  }
+  return [];
+}
+
+export async function addPatient(pharmacyId: string, p: Omit<import('../types').Patient, 'id' | 'createdAt' | 'pharmacyId'>): Promise<import('../types').Patient> {
+  let createdPatient: import('../types').Patient = {
+    id: `pat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    pharmacyId,
+    ...p,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase.from('patients').insert([{
+      pharmacy_id: pharmacyId,
+      uhid: p.uhid,
+      name: p.name,
+      phone: p.phone,
+      gender: p.gender,
+      age: p.age,
+      blood_group: p.bloodGroup,
+      address: p.address,
+      allergies: p.allergies,
+      chronic_conditions: p.chronicConditions
+    }]).select().single();
+
+    if (!error && data) {
+      createdPatient = {
+        id: data.id,
+        pharmacyId: data.pharmacy_id,
+        uhid: data.uhid,
+        name: data.name,
+        phone: data.phone,
+        gender: data.gender,
+        age: data.age,
+        bloodGroup: data.blood_group,
+        address: data.address,
+        allergies: data.allergies,
+        chronicConditions: data.chronic_conditions,
+        createdAt: data.created_at
+      };
+    }
+  } catch (err) {
+    // Silent fallback to local storage
+  }
+
+  const existing = await getPatients(pharmacyId);
+  const updated = [createdPatient, ...existing.filter(x => x.id !== createdPatient.id)];
+  localStorage.setItem(`${STORAGE_PATIENTS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  return createdPatient;
+}
+
+export async function getOpConsultations(pharmacyId: string): Promise<import('../types').OpConsultation[]> {
+  try {
+    const { data, error } = await supabase
+      .from('op_consultations')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((row: any) => ({
+        id: row.id,
+        pharmacyId: row.pharmacy_id,
+        uhid: row.uhid,
+        patientName: row.patient_name,
+        patientPhone: row.patient_phone,
+        gender: row.gender,
+        age: row.age,
+        doctorName: row.doctor_name,
+        vitals: row.vitals,
+        diagnosis: row.diagnosis,
+        medicines: row.medicines || [],
+        consultationFee: row.consultation_fee || 0,
+        tokenNumber: row.token_number,
+        status: row.status,
+        createdAt: row.created_at,
+      }));
+    }
+  } catch (err) {
+    // Fallback to local storage
+  }
+
+  const raw = localStorage.getItem(`${STORAGE_CONSULTATIONS_KEY}_${pharmacyId}`);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) {}
+  }
+  return [];
+}
+
+export async function addOpConsultation(pharmacyId: string, c: Omit<import('../types').OpConsultation, 'id' | 'createdAt' | 'pharmacyId'>): Promise<import('../types').OpConsultation> {
+  let newConsultation: import('../types').OpConsultation = {
+    id: `opc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    pharmacyId,
+    ...c,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase.from('op_consultations').insert([{
+      pharmacy_id: pharmacyId,
+      uhid: c.uhid,
+      patient_name: c.patientName,
+      patient_phone: c.patientPhone,
+      gender: c.gender,
+      age: c.age,
+      doctor_name: c.doctorName,
+      vitals: c.vitals,
+      diagnosis: c.diagnosis,
+      medicines: c.medicines,
+      consultation_fee: c.consultationFee,
+      token_number: c.tokenNumber,
+      status: c.status
+    }]).select().single();
+
+    if (!error && data) {
+      newConsultation = {
+        id: data.id,
+        pharmacyId: data.pharmacy_id,
+        uhid: data.uhid,
+        patientName: data.patient_name,
+        patientPhone: data.patient_phone,
+        gender: data.gender,
+        age: data.age,
+        doctorName: data.doctor_name,
+        vitals: data.vitals,
+        diagnosis: data.diagnosis,
+        medicines: data.medicines || [],
+        consultationFee: data.consultation_fee || 0,
+        tokenNumber: data.token_number,
+        status: data.status,
+        createdAt: data.created_at
+      };
+    }
+  } catch (err) {
+    // Silent fallback
+  }
+
+  const existing = await getOpConsultations(pharmacyId);
+  const updated = [newConsultation, ...existing.filter(x => x.id !== newConsultation.id)];
+  localStorage.setItem(`${STORAGE_CONSULTATIONS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  return newConsultation;
+}
+
+export async function updateOpConsultationStatus(pharmacyId: string, id: string, status: import('../types').OpConsultationStatus): Promise<void> {
+  try {
+    await supabase
+      .from('op_consultations')
+      .update({ status })
+      .eq('id', id);
+  } catch (err) {}
+
+  const existing = await getOpConsultations(pharmacyId);
+  const updated = existing.map(item => item.id === id ? { ...item, status } : item);
+  localStorage.setItem(`${STORAGE_CONSULTATIONS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+}
