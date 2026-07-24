@@ -26,7 +26,7 @@ export default function VoiceAgentModal({
   const [voiceMuted, setVoiceMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [elevenLabsAgentId, setElevenLabsAgentId] = useState(() => {
-    return localStorage.getItem('livafil_elevenlabs_agent_id') || import.meta.env.VITE_ELEVENLABS_AGENT_ID || 'agent_5401ky8y0tsgejyr3pmqya8qhhyb';
+    return localStorage.getItem('livafil_elevenlabs_agent_id') || (import.meta.env as any).VITE_ELEVENLABS_AGENT_ID || 'agent_5401ky8y0tsgejyr3pmqya8qhhyb';
   });
   const [showConfig, setShowConfig] = useState(false);
 
