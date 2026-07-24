@@ -136,7 +136,7 @@ const handleApplyDiscount = async (batchId: string) => {
       const billsCount = todayBills.length;
       const returnedBillsCount = todayBills.filter(b => b.status === 'Returned' || b.status === 'Partially Returned').length;
       
-      const message = `*MEDGUARD DAILY SUMMARY*\nDate: ${new Date().toLocaleDateString('en-IN')}\n\n*Sales Performance:*\nTotal Revenue: ${formatCurrency(salesTotal)}\nTotal Invoices: ${billsCount}\nReturned/Refunded: ${returnedBillsCount}\n\n*Inventory Health:*\nShelf Score: ${health?.score || 0}/100\nPending Recommendations: ${recommendations.length}\n\nHave a great evening!`;
+      const message = `*LIVAFIL DAILY SUMMARY*\nDate: ${new Date().toLocaleDateString('en-IN')}\n\n*Sales Performance:*\nTotal Revenue: ${formatCurrency(salesTotal)}\nTotal Invoices: ${billsCount}\nReturned/Refunded: ${returnedBillsCount}\n\n*Inventory Health:*\nShelf Score: ${health?.score || 0}/100\nPending Recommendations: ${recommendations.length}\n\nHave a great evening!`;
       
       sendWhatsAppMessage(pharm.whatsappAdminPhone, message);
       
@@ -281,7 +281,7 @@ const handleApplyDiscount = async (batchId: string) => {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 border border-white/10 px-2 py-0.5 rounded-sm">MEDGUARD COGNITIVE ADVISOR</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 border border-white/10 px-2 py-0.5 rounded-sm">LIVAFIL COGNITIVE ADVISOR</span>
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span className="text-[10px] text-emerald-200 font-semibold uppercase tracking-wide">Operational Guard Active</span>
             </div>

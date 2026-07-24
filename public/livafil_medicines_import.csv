@@ -1,0 +1,16 @@
+Name,GenericName,Manufacturer,Strength,DosageForm,Barcode,PrescriptionRequired
+Dolo 650,Paracetamol,Micro Labs,650mg,Tablet,890123456001,FALSE
+Crocin 500,Paracetamol,GSK Healthcare,500mg,Tablet,890123456002,FALSE
+Augmentin 625 Duo,Amoxicillin + Clavulanic Acid,GSK Pharma,625mg,Tablet,890123456003,TRUE
+Glycomet GP 2,Metformin + Glimepiride,USV Ltd,2mg,Tablet,890123456004,TRUE
+Pan 40,Pantoprazole,Alkem Labs,40mg,Tablet,890123456005,FALSE
+Azithral 500,Azithromycin,Alembic Pharma,500mg,Tablet,890123456006,TRUE
+Cetzine 10,Cetirizine,Dr Reddys,10mg,Tablet,890123456007,FALSE
+Atorva 10,Atorvastatin,Zydus Healthcare,10mg,Tablet,890123456008,TRUE
+Telma 40,Telmisartan,Glenmark Pharma,40mg,Tablet,890123456009,TRUE
+Montair LC,Montelukast + Levocetirizine,Cipla Ltd,10mg,Tablet,890123456010,TRUE
+Asthalin Inhaler,Salbutamol,Cipla Ltd,100mcg,Inhaler,890123456011,TRUE
+Ascoril LS Syrup,Levosalbutamol + Ambroxol,Glenmark Pharma,100ml,Syrup,890123456012,FALSE
+Thyronorm 50,Thyroxine Sodium,Abbott India,50mcg,Tablet,890123456013,TRUE
+Combiflam,Ibuprofen + Paracetamol,Sanofi India,400mg,Tablet,890123456014,FALSE
+Volini Gel,Diclofenac,Sun Pharma,30g,Ointment,890123456015,FALSE

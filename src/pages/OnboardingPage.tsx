@@ -194,7 +194,7 @@ const onSubmit = async (data: OnboardingFormValues) => {
           Complete Pharmacy Onboarding
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-          MedGuard requires your business credentials to secure your custom workspace.
+          Livafil requires your business credentials to secure your custom workspace.
         </p>
 
         {/* Step Progress Indicators */}

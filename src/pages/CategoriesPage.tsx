@@ -311,7 +311,7 @@ export default function CategoriesPage() {
                 <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-2">Live Badge Preview</p>
                 <div className="flex justify-center py-2">
                   <span className={`inline-flex px-3.5 py-1 rounded-full text-xs font-bold border ${selectedColorClass}`}>
-                    Demo Classification Label
+                    Category Badge Preview
                   </span>
                 </div>
               </div>

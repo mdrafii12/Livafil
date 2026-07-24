@@ -221,7 +221,7 @@ useEffect(() => {
       ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
-    triggerDownload(csvContent, 'text/csv;charset=utf-8;', `medguard_intelligence_${activeReport}_report.csv`);
+    triggerDownload(csvContent, 'text/csv;charset=utf-8;', `livafil_intelligence_${activeReport}_report.csv`);
   };
 
   // EXPORT 2: EXCEL FORMAT (Tab-separated structured sheet)
@@ -252,7 +252,7 @@ useEffect(() => {
       ...rows.map(row => row.join('\t'))
     ].join('\n');
 
-    triggerDownload(tsvContent, 'application/vnd.ms-excel;charset=utf-8;', `medguard_intelligence_${activeReport}_spreadsheet.xls`);
+    triggerDownload(tsvContent, 'application/vnd.ms-excel;charset=utf-8;', `livafil_intelligence_${activeReport}_spreadsheet.xls`);
   };
 
   // EXPORT 3: FORMAL AUDIT PDF (Plain-Text structured summary designed to be clean)
@@ -320,7 +320,7 @@ useEffect(() => {
     text += `        END OF FORMAL PHARMACY AUDIT LEDGER REPORT\n`;
     text += `========================================================\n`;
 
-    triggerDownload(text, 'text/plain;charset=utf-8;', `medguard_formal_audit_${activeReport}.txt`);
+    triggerDownload(text, 'text/plain;charset=utf-8;', `livafil_formal_audit_${activeReport}.txt`);
   };
 
   const triggerDownload = (content: string, type: string, filename: string) => {

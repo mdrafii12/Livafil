@@ -432,7 +432,7 @@ const loadData = async () => {
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 AI Smart Salvage Optimization
               </h2>
-              <p className="text-xs text-gray-500 mb-6">Let the MedGuard AI engine assist you in executing reciprocal capital retrieval for the selected drug batch.</p>
+              <p className="text-xs text-gray-500 mb-6">Let the Livafil AI engine assist you in executing reciprocal capital retrieval for the selected drug batch.</p>
 
               {/* Selection Summary Header */}
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -675,7 +675,7 @@ const loadData = async () => {
               <p className="text-xs font-bold uppercase tracking-wider text-amber-400">B2B Compliance Compass</p>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-300">
-              In accordance with federal FDA guidelines and local drug regulatory standards, returned or donated medicines must verify complete cold-chain records and seal safety guarantees. MedGuard Exchange enforces double-blind HIPAA masking until mutual compliance validation.
+              In accordance with federal FDA guidelines and local drug regulatory standards, returned or donated medicines must verify complete cold-chain records and seal safety guarantees. Livafil Exchange enforces double-blind HIPAA masking until mutual compliance validation.
             </p>
             <div className="h-px bg-slate-850"></div>
             <div className="flex items-center justify-between text-[10px] text-slate-400">

@@ -12,12 +12,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('medguard_lang');
+    const saved = localStorage.getItem('livafil_lang');
     return (saved as Language) || 'en';
   });
 
   useEffect(() => {
-    localStorage.setItem('medguard_lang', language);
+    localStorage.setItem('livafil_lang', language);
     i18n.changeLanguage(language);
   }, [language]);
 

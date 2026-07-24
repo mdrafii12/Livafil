@@ -55,7 +55,7 @@ const onSubmit = async (data: RegisterFormValues) => {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-display font-bold text-gray-900 dark:text-white tracking-tight">
-          Create your MedGuard workspace
+          Create your Livafil workspace
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
           Already have an account?{' '}

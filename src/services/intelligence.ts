@@ -633,7 +633,7 @@ static getInventoryValueAnalytics(batches: Batch[], categories: Category[], medi
       recommendations.push({
         id: `rec-mkt-${sm.id}`,
         type: 'marketplace',
-        title: 'List on MedGuard Exchange',
+        title: 'List on Livafil Exchange',
         description: `Batch ${sm.batchNumber} of ${sm.medicineName} has had 0 sales movements for over ${sm.daysSinceLastMovement} days. Recommend list-transferring surplus to partner clinics.`,
         impactValue: sm.value * 0.80,
         impactLabel: 'Exchange Sales Valuation',

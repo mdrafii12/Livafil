@@ -3,8 +3,9 @@ import {
   Search, Barcode, ShoppingCart, Trash2, Plus, Minus, User, 
   CreditCard, Receipt, History, RotateCcw, BarChart3, Settings, 
   Sparkles, AlertCircle, RefreshCw, Printer, Download, Filter, 
-  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera
+  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera, Mic
 } from 'lucide-react';
+import VoiceAgentModal from '../components/VoiceAgentModal';
 import { 
   BarChart, Bar, Cell, PieChart, Pie, Legend, Tooltip, 
   ResponsiveContainer, XAxis, YAxis
@@ -159,6 +160,8 @@ export default function BillingPage() {
     const timer = setTimeout(loadPrescriptions, 500);
     return () => clearTimeout(timer);
   }, [customerPhone, cart, profile?.pharmacy_id, medicines]);
+
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   useEffect(() => {
     // Setup Keyboard shortcuts
@@ -405,7 +408,7 @@ export default function BillingPage() {
               expDate: targetBatch.expiryDate
             }]);
           }
-          showToast('success', `Scanned demo barcode for ${match.name}`);
+          showToast('success', `Scanned barcode for ${match.name}`);
         } else {
           showToast('error', `Stock is currently unavailable for ${match.name}.`);
         }
@@ -545,7 +548,7 @@ export default function BillingPage() {
     const customerPayload: CustomerDetails = {
       name: customerName.trim() || 'Walk-in Guest',
       phone: customerPhone.trim() || 'N/A',
-      email: customerEmail.trim() || 'guest@medguard.com',
+      email: customerEmail.trim() || 'guest@livafil.com',
       notes: customerNotes.trim() || undefined
     };
 
@@ -884,7 +887,7 @@ export default function BillingPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('href', url);
-    a.setAttribute('download', `medguard-sales-export-${new Date().toISOString().split('T')[0]}.csv`);
+    a.setAttribute('download', `livafil-sales-export-${new Date().toISOString().split('T')[0]}.csv`);
     a.click();
     showToast('success', 'Sales history exported successfully as CSV.');
   };
@@ -1227,13 +1230,23 @@ export default function BillingPage() {
                   </form>
                 </div>
 
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setVoiceModalOpen(true)}
+                    className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/10 flex items-center gap-2 transition-all transform hover:-translate-y-0.5 active:scale-95"
+                    title="Start Voice-to-Cart Billing"
+                  >
+                    <Mic className="w-4 h-4 animate-pulse" /> Voice Billing
+                  </button>
+                </div>
+
               </div>
 
-              {/* DEMO BARCODE CLICKABLE PALETTE FOR CASHIER SIMULATION */}
+              {/* QUICK BARCODE SELECTION PALETTE FOR RAPID CASHIER ENTRY */}
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Scan Simulators:
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Barcodes:
                   </span>
                   {medicines.map(med => (
                     <button
@@ -1334,7 +1347,7 @@ export default function BillingPage() {
                   </div>
                   <h3 className="font-bold text-slate-700 dark:text-slate-300 text-sm">Receipt Cart is Empty</h3>
                   <p className="text-xs text-slate-400 mt-1 max-w-[280px]">
-                    Scan demo barcodes above or search drug names to assemble customer purchases.
+                    Scan barcodes or search drug names to assemble customer purchases.
                   </p>
                 </div>
               ) : (
@@ -2190,7 +2203,7 @@ export default function BillingPage() {
               <div className="text-center pt-2 font-mono text-[9px] text-slate-400">
                 <p>--- THANK YOU ---</p>
                 <p className="mt-0.5">Drugs dispensed are non-refundable without valid audit checks.</p>
-                <p className="mt-1 font-sans text-[8px] text-emerald-600">Prescription sync powered by MedGuard Intelligence</p>
+                <p className="mt-1 font-sans text-[8px] text-emerald-600">Prescription sync powered by Livafil Intelligence</p>
               </div>
 
             </div>
@@ -2262,6 +2275,26 @@ export default function BillingPage() {
           onClose={() => setShowCameraScanner(false)}
         />
       )}
+      {/* VOICE BILLING MODAL OVERLAY */}
+      <VoiceAgentModal
+        isOpen={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        mode="billing"
+        medicines={medicines}
+        onAddToCart={(drugQuery, qty) => {
+          const match = medicines.find(m => 
+            m.name.toLowerCase().includes(drugQuery.toLowerCase()) || 
+            m.genericName.toLowerCase().includes(drugQuery.toLowerCase())
+          ) || medicines[0];
+
+          if (match) {
+            handleSelectMedicine(match);
+            showToast('success', `Added ${qty}x ${match.name} to cart by Voice command!`);
+          } else {
+            showToast('error', `Could not find stock for ${drugQuery}.`);
+          }
+        }}
+      />
     </div>
   );
 }

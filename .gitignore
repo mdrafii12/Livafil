@@ -16,3 +16,4 @@ release_builds/
 public/downloads/
 make_exe.sed
 scripts/
+.vercel

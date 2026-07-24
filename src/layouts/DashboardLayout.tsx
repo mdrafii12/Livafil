@@ -5,8 +5,9 @@ import {
   History, BarChart4, Users, Settings, Bell, Search, 
   Sun, Moon, Menu, X, ChevronDown, LogOut, Check, Trash2, 
   User as UserIcon, Building2, Eye, CircleAlert, ArrowLeftRight,
-  Coins, ShieldAlert, HelpCircle, Receipt, Globe, AlarmClock, Stethoscope
+  Coins, ShieldAlert, HelpCircle, Receipt, Globe, AlarmClock, Stethoscope, Mic
 } from 'lucide-react';
+import VoiceAgentModal from '../components/VoiceAgentModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -26,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
   const [profileOpen, setProfileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [voiceAgentOpen, setVoiceAgentOpen] = useState(false);
   
   const { language, setLanguage } = useLanguage();
 
@@ -107,7 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'movements', label: 'Stock Movements', path: '/movements', icon: History, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'recovery', label: 'Recovery Center', path: '/recovery', icon: Coins, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'reports', label: 'Reports Audit', path: '/reports', icon: BarChart4, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'exchange', label: 'MedGuard Exchange', path: '/exchange', icon: ArrowLeftRight, roles: ['Owner', 'Manager', 'Staff'] },
+    { name: 'exchange', label: 'Livafil Exchange', path: '/exchange', icon: ArrowLeftRight, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'users', label: 'Staff Management', path: '/users', icon: Users, roles: ['Owner', 'Manager'] },
     { name: 'support', label: 'Support Hub', path: '/support', icon: HelpCircle, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'admin', label: 'Super Admin', path: '/admin', icon: ShieldAlert, roles: ['Owner', 'Manager'] },
@@ -299,6 +301,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </div>
             
+            {/* Voice Assistant Button */}
+            <button
+              onClick={() => setVoiceAgentOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-semibold text-xs transition-all shadow-md shadow-blue-500/10 flex items-center gap-1.5 transform hover:-translate-y-0.5 active:scale-95"
+              title="Open Livafil Voice Agent"
+            >
+              <Mic className="h-4 w-4 animate-pulse" />
+              <span className="hidden md:inline">Voice Agent</span>
+            </button>
+
             {/* Lighter/Darker Theme Switcher */}
             <button
               onClick={() => setTheme(isDark ? 'light' : 'dark')}
@@ -476,6 +488,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+      {/* GLOBAL VOICE AGENT OVERLAY */}
+      <VoiceAgentModal
+        isOpen={voiceAgentOpen}
+        onClose={() => setVoiceAgentOpen(false)}
+        mode="general"
+      />
+
     </div>
   );
 }

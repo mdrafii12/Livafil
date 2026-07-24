@@ -174,7 +174,7 @@ export default function LandingPage() {
                 </span>
               </h1>
               <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                MedGuard is the premium AI-driven pharmacy stock recovery platform. Track multi-batch medicines, secure supplier credit, and liquidate aging stock before it expires. Reduce drug waste by up to 85%.
+                Livafil is the premium AI-driven pharmacy stock recovery platform. Track multi-batch medicines, secure supplier credit, and liquidate aging stock before it expires. Reduce drug waste by up to 85%.
               </p>
               <div className="pt-4 flex flex-col sm:flex-row justify-center lg:justify-start items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <button
@@ -219,7 +219,7 @@ export default function LandingPage() {
                     <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
                     <span className="w-3 h-3 bg-green-500 rounded-full"></span>
                   </div>
-                  <span className="text-xs font-mono text-gray-400">medguard-dashboard-v1</span>
+                  <span className="text-xs font-mono text-gray-400">livafil-dashboard-v1</span>
                 </div>
                 
                 {/* Simulated UI Cards inside Hero */}
@@ -455,7 +455,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 bg-gray-50/50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-2xl">
               <p className="text-sm text-gray-500 dark:text-gray-400 italic mb-6 leading-relaxed">
-                "MedGuard has completely revolutionized how we audit shelves. We used to lose thousands on expired batches every single quarter. This system paid for itself in just two weeks."
+                "Livafil has completely revolutionized how we audit shelves. We used to lose thousands on expired batches every single quarter. This system paid for itself in just two weeks."
               </p>
               <div className="flex items-center space-x-3">
                 <div className="h-10 w-10 bg-blue-600 text-white font-bold rounded-full flex items-center justify-center text-sm">
@@ -593,7 +593,7 @@ export default function LandingPage() {
             {/* Enterprise Tier */}
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 flex flex-col justify-between">
               <div>
-                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">MedGuard Chain</h3>
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Livafil Chain</h3>
                 <p className="text-xs text-gray-400 mt-1">For multiple stores or clinical chains</p>
                 <div className="mt-6 flex items-baseline">
                   <span className="font-display font-bold text-4xl text-gray-900 dark:text-white">{formatCurrency(249)}</span>
@@ -644,22 +644,22 @@ export default function LandingPage() {
           <div className="space-y-2">
             <FAQItem
               question="Is this a billing or point-of-sale (POS) software?"
-              answer="No, MedGuard is strictly an inventory intelligence and expiry loss recovery SaaS platform. It does not handle customer billing or prescriptions dispensing, but is designed to operate seamlessly alongside your existing POS and ERP databases."
+              answer="No, Livafil is strictly an inventory intelligence and expiry loss recovery SaaS platform. It does not handle customer billing or prescriptions dispensing, but is designed to operate seamlessly alongside your existing POS and ERP databases."
             />
             <FAQItem
-              question="How does MedGuard prevent drug expiration losses?"
-              answer="MedGuard maintains independent, multi-batch records for every medicine. Instead of just showing total quantities, it flags exactly which batch is expiring, tracks when it was received, and maps the exact supplier return window. You will receive real-time, high-priority notifications before the item crosses 90, 60, or 30 days."
+              question="How does Livafil prevent drug expiration losses?"
+              answer="Livafil maintains independent, multi-batch records for every medicine. Instead of just showing total quantities, it flags exactly which batch is expiring, tracks when it was received, and maps the exact supplier return window. You will receive real-time, high-priority notifications before the item crosses 90, 60, or 30 days."
             />
             <FAQItem
               question="What is the Onboarding process like?"
               answer="After registering your account, Owner users complete a short onboarding form detailing your pharmacy license, GSTIN, and location. This links your workspace and configures the system with correct default parameters. The entire wizard takes less than two minutes."
             />
             <FAQItem
-              question="Can I invite my staff to join MedGuard?"
-              answer="Absolutely! MedGuard supports Owner, Manager, and Staff roles. Owners can invite coworkers via the User Management panel, assign roles, or deactivate employees if their status changes."
+              question="Can I invite my staff to join Livafil?"
+              answer="Absolutely! Livafil supports Owner, Manager, and Staff roles. Owners can invite coworkers via the User Management panel, assign roles, or deactivate employees if their status changes."
             />
             <FAQItem
-              question="Does MedGuard export standard compliance sheets?"
+              question="Does Livafil export standard compliance sheets?"
               answer="Yes. Under the Reports module, you can instantly search, filter, and export customized PDF or Excel templates covering Expiry timelines, Low Stock alerts, and Supplier-specific performance data."
             />
           </div>
@@ -672,7 +672,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-6">
           <h2 className="font-display font-bold text-3xl sm:text-4xl">Ready to secure your pharmacy inventory?</h2>
           <p className="text-blue-100 max-w-2xl mx-auto text-base">
-            Join hundreds of modern pharmacies using MedGuard to turn expiry liabilities into secured credits. Setup takes under five minutes.
+            Join hundreds of modern pharmacies using Livafil to turn expiry liabilities into secured credits. Setup takes under five minutes.
           </p>
           <div className="pt-4">
             <button
@@ -694,7 +694,7 @@ export default function LandingPage() {
               <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <Shield className="h-4.5 w-4.5 text-white" />
               </div>
-              <span className="font-display font-bold text-lg text-white">MedGuard</span>
+              <span className="font-display font-bold text-lg text-white">Livafil</span>
             </div>
             <p className="text-xs leading-relaxed">
               AI Inventory Recovery Platform for Pharmacies. Protecting shelves, reclaiming credits, and preventing medical waste since 2026.
@@ -729,7 +729,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} MedGuard Platform. All rights reserved. Developed with premium modular guidelines.
+          &copy; {new Date().getFullYear()} Livafil Platform. All rights reserved. Developed with premium modular guidelines.
         </div>
       </footer>
     </div>

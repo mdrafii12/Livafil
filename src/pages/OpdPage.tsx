@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Stethoscope, UserPlus, Search, Plus, CheckCircle, Clock, 
   Send, FileText, Activity, AlertCircle, Trash2, Printer, Download,
-  ChevronRight, RefreshCw, UserCheck, ShieldAlert, Pill, HeartPulse, Sparkles
+  ChevronRight, RefreshCw, UserCheck, ShieldAlert, Pill, HeartPulse, Sparkles, Mic
 } from 'lucide-react';
+import VoiceAgentModal from '../components/VoiceAgentModal';
 import { useAuth } from '../contexts/AuthContext';
 import * as db from '../services/supabaseData';
 import { Patient, OpConsultation, Medicine, OpPrescriptionItem } from '../types';
@@ -27,6 +28,7 @@ export default function OpdPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [patientSearchInput, setPatientSearchInput] = useState('');
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   // Patient Record History Modal State
   const [viewPatientHistory, setViewPatientHistory] = useState<Patient | null>(null);
@@ -441,6 +443,12 @@ export default function OpdPage() {
         </div>
 
         <div className="relative z-10 flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => setVoiceModalOpen(true)}
+            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+          >
+            <Mic className="w-4 h-4 animate-pulse" /> Book by Voice
+          </button>
           <button 
             onClick={() => setPatientModalOpen(true)}
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
@@ -1304,6 +1312,36 @@ export default function OpdPage() {
           </div>
         </div>
       )}
+      {/* VOICE APPOINTMENT MODAL */}
+      <VoiceAgentModal
+        isOpen={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        mode="opd"
+        onBookAppointment={async (data) => {
+          if (!profile?.pharmacy_id) return;
+          try {
+            const count = patients.length + 1;
+            const uhid = `UHID-${new Date().getFullYear()}-${String(count).padStart(4, '0')}`;
+            const created = await db.addPatient(profile.pharmacy_id, {
+              name: data.name,
+              phone: data.phone,
+              gender: data.gender || 'Male',
+              age: data.age || 30,
+              bloodGroup: 'O+',
+              address: 'Voice Registered Patient',
+              allergies: '',
+              chronicConditions: '',
+              uhid
+            });
+            setPatients(prev => [created, ...prev]);
+            setSelectedPatient(created);
+            setActiveTab('prescribe');
+            showToast('success', `Voice OPD Appointment booked for ${data.name} (UHID: ${uhid})!`);
+          } catch (err: any) {
+            showToast('error', `Failed to book voice appointment: ${err.message}`);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -90,7 +90,7 @@ const syncTickets = async () => {
   const faqs: FAQ[] = [
     {
       q: 'How does the B2B Exchange masking mechanism protect my pharmacy?',
-      a: 'MedGuard uses a secure Double-Blind Masking architecture. When you post a near-expiry listing, your pharmacy name and exact coordinates are completely masked to prospective buyers. Only when both parties mutually consent to a transaction/swap do secure HIPAA credentials disclose details.',
+      a: 'Livafil uses a secure Double-Blind Masking architecture. When you post a near-expiry listing, your pharmacy name and exact coordinates are completely masked to prospective buyers. Only when both parties mutually consent to a transaction/swap do secure HIPAA credentials disclose details.',
       cat: 'Exchange Compliance'
     },
     {
@@ -105,7 +105,7 @@ const syncTickets = async () => {
     },
     {
       q: 'How are tax write-off credits calculated for donated expiring drugs?',
-      a: 'Medicines donated to local public health clinics or verified non-profit NGOs qualify for corporate tax deductions under IRC Section 170(e)(3) as a direct write-off on inventory depreciation. MedGuard logs the exact acquisition cost basis in your Recovery Ledger.',
+      a: 'Medicines donated to local public health clinics or verified non-profit NGOs qualify for corporate tax deductions under IRC Section 170(e)(3) as a direct write-off on inventory depreciation. Livafil logs the exact acquisition cost basis in your Recovery Ledger.',
       cat: 'Donations'
     }
   ];
@@ -151,7 +151,7 @@ const syncTickets = async () => {
             V2.5 Update Released
           </p>
           <p className="font-medium text-blue-50 leading-relaxed max-w-2xl">
-            MedGuard v2.5 is now live! We have introduced the multi-tenant Recovery Center dashboard, real-time ticket messaging threads, and 1-click B2B Exchange Listing Wizards to salvage near-expiry drug inventories.
+            Livafil v2.5 is now live! We have introduced the multi-tenant Recovery Center dashboard, real-time ticket messaging threads, and 1-click B2B Exchange Listing Wizards to salvage near-expiry drug inventories.
           </p>
         </div>
       </div>
@@ -449,7 +449,7 @@ const syncTickets = async () => {
               <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">HIPAA SLA Guarding</p>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-300">
-              For security, do not disclose patient prescription names, clinical histories, or private drug registry numbers in support ticket logs. MedGuard complies with ISO 27001 data center standards.
+              For security, do not disclose patient prescription names, clinical histories, or private drug registry numbers in support ticket logs. Livafil complies with ISO 27001 data center standards.
             </p>
             <div className="pt-2 border-t border-slate-850 flex justify-between items-center text-[10px] text-slate-400 font-bold">
               <span>SLA Response: &lt; 1 hour</span>

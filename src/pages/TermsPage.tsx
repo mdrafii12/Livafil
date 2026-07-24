@@ -24,15 +24,15 @@ export default function TermsPage() {
 
           <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-300 space-y-5">
             <p>
-              These Terms of Service ("Terms") govern your access to and use of MedGuard 
+              These Terms of Service ("Terms") govern your access to and use of Livafil 
               ("we", "us", "our", the "Service"), a pharmacy inventory and management 
               platform. By creating an account or using the Service, you agree to these 
               Terms. If you do not agree, do not use the Service.
             </p>
 
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">1. Who Can Use MedGuard</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base">1. Who Can Use Livafil</h3>
             <p>
-              MedGuard is intended for use by licensed pharmacies, pharmacists, and 
+              Livafil is intended for use by licensed pharmacies, pharmacists, and 
               authorized pharmacy staff operating in India. By registering, you confirm 
               that you hold or are authorized to act on behalf of a business holding a 
               valid pharmacy license under applicable Indian law, and that the 
@@ -50,7 +50,7 @@ export default function TermsPage() {
 
             <h3 className="font-bold text-gray-900 dark:text-white text-base">3. What You're Responsible For</h3>
             <p>
-              MedGuard is a tool to help you manage inventory, billing, and stock 
+              Livafil is a tool to help you manage inventory, billing, and stock 
               recovery — it does not replace your professional judgment or your legal 
               obligations as a licensed pharmacy. You remain solely responsible for:
             </p>
@@ -70,7 +70,7 @@ export default function TermsPage() {
             <h3 className="font-bold text-gray-900 dark:text-white text-base">4. The Exchange Feature</h3>
             <p>
               The Exchange marketplace connects your pharmacy with other pharmacies on 
-              the platform to facilitate trading of surplus or near-expiry stock. MedGuard 
+              the platform to facilitate trading of surplus or near-expiry stock. Livafil 
               does not take ownership of, inspect, or guarantee the condition, 
               authenticity, or legality of any medicine exchanged between pharmacies. 
               Each pharmacy is independently responsible for verifying the other party's 
@@ -90,7 +90,7 @@ export default function TermsPage() {
             <h3 className="font-bold text-gray-900 dark:text-white text-base">6. Data You Provide</h3>
             <p>
               You retain ownership of the business, inventory, and customer data you 
-              enter into MedGuard. See our{' '}
+              enter into Livafil. See our{' '}
               <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>{' '}
               for how we handle it. By using the Service, you confirm you have the right 
               to enter any customer data (such as names or phone numbers used in 
@@ -99,7 +99,7 @@ export default function TermsPage() {
 
             <h3 className="font-bold text-gray-900 dark:text-white text-base">7. Limitation of Liability</h3>
             <p>
-              MedGuard is provided "as is." To the maximum extent permitted by law, we 
+              Livafil is provided "as is." To the maximum extent permitted by law, we 
               are not liable for indirect, incidental, or consequential damages arising 
               from your use of the Service, including but not limited to losses from 
               stock discrepancies, failed Exchange transactions, or decisions made based 

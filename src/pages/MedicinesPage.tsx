@@ -216,7 +216,7 @@ export default function MedicinesPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `medguard_medicines_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `livafil_medicines_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -773,8 +773,8 @@ export default function MedicinesPage() {
                 <div className="flex justify-between items-center">
                   <p className="font-semibold text-gray-700 dark:text-gray-300">Required Headers Format:</p>
                   <a 
-                    href="/demo_medicines_import.csv" 
-                    download="demo_medicines_import.csv"
+                    href="/livafil_medicines_import.csv" 
+                    download="livafil_medicines_import.csv"
                     className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold flex items-center gap-1"
                   >
                     <Download className="w-3 h-3" /> Download Sample CSV

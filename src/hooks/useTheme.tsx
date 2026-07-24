@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
-const THEME_STORAGE_KEY = 'medguard-theme';
+const THEME_STORAGE_KEY = 'livafil-theme';
 
 const getStoredTheme = (): Theme => {
   if (typeof window === 'undefined') return 'light';

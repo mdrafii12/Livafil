@@ -202,11 +202,11 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
 
   // Backup downloader mock
   const handleDownloadBackup = () => {
-    showNotification('Preparing HIPAA safe secure backup... Package medguard_db_backup.json generated!');
+    showNotification('Preparing HIPAA safe secure backup... Package livafil_db_backup.json generated!');
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localStorage));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "medguard_hipaa_backup.json");
+    downloadAnchor.setAttribute("download", "livafil_hipaa_backup.json");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -222,7 +222,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
   const handleToggleMFA = () => {
     if (!is2FAEnabled) {
       setIs2FAEnabled(true);
-      setMfaSecretCode('MEDGUARD-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+      setMfaSecretCode('LIVAFIL-' + Math.random().toString(36).substring(2, 8).toUpperCase());
       showNotification('2FA enabled! Secure authenticator key generated.');
     } else {
       setIs2FAEnabled(false);
@@ -730,7 +730,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
                     className="w-full h-1 bg-slate-200 dark:bg-slate-850 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
                   <p className="text-[10px] text-gray-400 mt-1 leading-snug">
-                    MedGuard automatically alerts your team and lists salvage alternatives when stock falls within this range.
+                    Livafil automatically alerts your team and lists salvage alternatives when stock falls within this range.
                   </p>
                 </div>
 
@@ -876,7 +876,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
                 <div className="space-y-1 text-slate-300">
                   <span className="font-bold text-amber-400 uppercase tracking-wider text-[10px]">Security Standard HIPAA Compliant</span>
                   <p className="leading-relaxed">
-                    MedGuard systems maintain fully compliant connection pools with SSL enforcement. Local cache files containing drug lists or customer logs are securely isolated from standard public browser extensions.
+                    Livafil systems maintain fully compliant connection pools with SSL enforcement. Local cache files containing drug lists or customer logs are securely isolated from standard public browser extensions.
                   </p>
                 </div>
               </div>

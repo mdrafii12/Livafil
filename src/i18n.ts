@@ -11,7 +11,7 @@ const resources = {
   te: { translation: te }
 };
 
-const savedLanguage = localStorage.getItem('medguard_lang') || 'en';
+const savedLanguage = localStorage.getItem('livafil_lang') || 'en';
 
 i18n
   .use(initReactI18next)

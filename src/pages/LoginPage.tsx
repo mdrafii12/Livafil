@@ -47,7 +47,7 @@ export default function LoginPage() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-display font-bold text-gray-900 dark:text-white tracking-tight">
-          Welcome back to MedGuard
+          Welcome back to Livafil
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
           Or{' '}

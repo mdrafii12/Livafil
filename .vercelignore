@@ -1,0 +1,12 @@
+node_modules
+dist
+dist_electron
+release_builds
+*.exe
+*.blockmap
+*.zip
+*.dmg
+*.AppImage
+make_exe.sed
+.git
+.vscode

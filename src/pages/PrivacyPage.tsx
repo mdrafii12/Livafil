@@ -24,7 +24,7 @@ export default function PrivacyPage() {
 
           <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-300 space-y-5">
             <p>
-              This Privacy Policy explains how MedGuard ("we", "us", "our") collects, 
+              This Privacy Policy explains how Livafil ("we", "us", "our") collects, 
               uses, stores, and protects personal data, in accordance with the Digital 
               Personal Data Protection Act, 2023 ("DPDP Act") and other applicable Indian 
               law. As a Data Fiduciary under the DPDP Act, we are responsible for 

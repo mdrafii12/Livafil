@@ -169,7 +169,7 @@ export default function ExchangePage() {
     if (pharmacyId === 'phar-stjude') {
       return { owner: 'Sister Mary Joseph', phone: '+1 (555) 890-4455', email: 'dispensary@stjudeclinical.org', address: '109 Cathedral Parkway, North Branch' };
     }
-    return { owner: 'Authorized Pharmacist', phone: '+1 (555) 999-0000', email: 'exchange@medguard-network.net', address: 'Verified Member Location' };
+    return { owner: 'Authorized Pharmacist', phone: '+1 (555) 999-0000', email: 'exchange@livafil-network.net', address: 'Verified Member Location' };
   };
 
   // One-click listing recommendation engine
@@ -600,7 +600,7 @@ export default function ExchangePage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8" id="medguard-exchange-root">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8" id="livafil-exchange-root">
       
       {/* GLOBAL NOTIFICATION ALERT BAR */}
       {alert && (
@@ -625,7 +625,7 @@ export default function ExchangePage() {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white" id="exchange-module-title">
-            MedGuard B2B Exchange
+            Livafil B2B Exchange
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
             A secure, collaborative network for licensed pharmacies to salvage value from surplus, near-expiry shelf stocks and source urgent therapeutics locally.
@@ -753,7 +753,7 @@ export default function ExchangePage() {
             
             <div className="space-y-3 z-10">
               <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1 w-max">
-                <HeartHandshake className="h-3 w-3" /> MedGuard Mutual Cooperation
+                <HeartHandshake className="h-3 w-3" /> Livafil Mutual Cooperation
               </span>
               <h2 className="text-2xl font-bold tracking-tight">
                 Your B2B Ecological Exchange Dashboard
@@ -786,7 +786,7 @@ export default function ExchangePage() {
                   <SlidersHorizontal className="h-4 w-4 text-blue-500" /> Match Configuration
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Configure search distance radius. MedGuard’s matching engine monitors listings and alignment triggers automatically.
+                  Configure search distance radius. Livafil’s matching engine monitors listings and alignment triggers automatically.
                 </p>
               </div>
               
@@ -1195,7 +1195,7 @@ export default function ExchangePage() {
               <HelpCircle className="h-5 w-5 text-purple-500" /> Source therapeutics by requesting them
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-4xl">
-              Are you currently out of stock on a critical medication? Post your need here. When a local partner uploads a matching batch on the exchange, MedGuard will generate notifications to streamline immediate B2B clearance.
+              Are you currently out of stock on a critical medication? Post your need here. When a local partner uploads a matching batch on the exchange, Livafil will generate notifications to streamline immediate B2B clearance.
             </p>
           </div>
 
@@ -1288,7 +1288,7 @@ export default function ExchangePage() {
                     AI Suggested Listings
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    MedGuard Expiry Intelligence has identified these surplus or near-expiry batches as optimal for local listing to minimize waste.
+                    Livafil Expiry Intelligence has identified these surplus or near-expiry batches as optimal for local listing to minimize waste.
                   </p>
                 </div>
               </div>
@@ -1744,7 +1744,7 @@ export default function ExchangePage() {
               <Sparkles className="h-5 w-5 text-amber-500" /> List Surplus Medicine
             </h3>
             <p className="text-xs text-slate-400 mb-5">
-              Select an expiring/overstock batch from your local MedGuard inventory to list securely on the B2B network.
+              Select an expiring/overstock batch from your local Livafil inventory to list securely on the B2B network.
             </p>
 
             <form onSubmit={handleCreateListing} className="space-y-4">

@@ -145,7 +145,7 @@ export default function ResetPasswordPage() {
                   to="/login"
                   className="inline-block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-xs text-center"
                 >
-                  Log In to MedGuard
+                  Log In to Livafil
                 </Link>
               </div>
             </div>

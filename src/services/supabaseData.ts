@@ -558,7 +558,7 @@ function mapBill(row: any): Bill {
     customer: {
       name: row.customer_name ?? 'Walk-in Guest',
       phone: row.customer_phone ?? 'N/A',
-      email: row.customer_email ?? 'guest@medguard.com',
+      email: row.customer_email ?? 'guest@livafil.com',
       notes: row.customer_notes ?? undefined,
     },
     items: (row.bill_items ?? []).map(mapBillItem),

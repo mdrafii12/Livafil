@@ -145,7 +145,7 @@ export interface SystemSettings {
 }
 
 // ==========================================
-// PHASE 3: MEDGUARD EXCHANGE INTERFACES
+// PHASE 3: LIVAFIL EXCHANGE INTERFACES
 // ==========================================
 
 export type ExchangeListingStatus = 'Active' | 'Reserved' | 'Sold' | 'Cancelled';
@@ -225,7 +225,7 @@ export interface ExchangeActivity {
 }
 
 // ==========================================
-// PHASE 4: MEDGUARD ENTERPRISE SAAS TYPES
+// PHASE 4: LIVAFIL ENTERPRISE SAAS TYPES
 // ==========================================
 
 export interface AuditLog {

@@ -1,5 +1,5 @@
 {
-  "name": "MedGuard",
+  "name": "Livafil",
   "description": "AI Inventory Recovery Platform for Pharmacies",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
