@@ -5,6 +5,9 @@ interface VoiceAgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode?: 'general' | 'opd' | 'billing';
+  onBookAppointment?: (data: { name: string; phone: string; age?: number; gender?: 'Male' | 'Female' | 'Other'; doctor?: string }) => void;
+  onAddToCart?: (medicineQuery: string, qty: number) => void;
+  medicines?: Array<{ id: string; name: string; stock?: number; price?: number }>;
 }
 
 export default function VoiceAgentModal({
