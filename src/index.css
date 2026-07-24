@@ -45,6 +45,16 @@
   @apply outline-hidden ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950;
 }
 
+/* ElevenLabs ConvAI Web Component Styling Fix */
+elevenlabs-convai {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: relative !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
 @media print {
   @page {
     margin: 0mm;

@@ -102,11 +102,11 @@ export default function VoiceAgentModal({
             </div>
 
             {/* Official ElevenLabs Web Component Element */}
-            <div className="py-4 flex justify-center scale-125 transform hover:scale-130 transition-transform">
+            <div className="w-full my-3 flex justify-center items-center relative overflow-hidden rounded-2xl bg-slate-900/90 border border-slate-800 p-4 shadow-inner min-h-[120px]">
               {React.createElement('elevenlabs-convai', { 'agent-id': elevenLabsAgentId })}
             </div>
 
-            <p className="text-xs text-slate-300 mt-5 max-w-xs leading-relaxed font-medium">
+            <p className="text-xs text-slate-300 mt-4 max-w-xs leading-relaxed font-medium">
               Click the phone icon above to start your voice call with the AI agent in <span className="text-emerald-400 font-bold">Hindi (हिंदी)</span>, <span className="text-blue-400 font-bold">Telugu (తెలుగు)</span>, or <span className="text-purple-400 font-bold">English</span>.
             </p>
           </div>
