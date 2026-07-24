@@ -21,8 +21,9 @@ export default function OpdPage() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Active Tab: 'prescribe' | 'patients' | 'queue'
-  const [activeTab, setActiveTab] = useState<'prescribe' | 'patients' | 'queue'>('prescribe');
+  // Active Tab: 'prescribe' | 'patients' | 'queue' | 'doctors'
+  const [activeTab, setActiveTab] = useState<'prescribe' | 'patients' | 'queue' | 'doctors'>('prescribe');
+  const [registeredDoctors, setRegisteredDoctors] = useState<import('../types').RegisteredDoctor[]>([]);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,15 +80,17 @@ export default function OpdPage() {
     if (!profile?.pharmacy_id) return;
     setLoading(true);
     try {
-      const [pData, cData, mData, pharm] = await Promise.all([
+      const [pData, cData, mData, pharm, docsData] = await Promise.all([
         db.getPatients(profile.pharmacy_id),
         db.getOpConsultations(profile.pharmacy_id),
         db.getMedicines(),
-        db.getMyPharmacy(profile.pharmacy_id).catch(() => null)
+        db.getMyPharmacy(profile.pharmacy_id).catch(() => null),
+        db.getRegisteredDoctors(profile.pharmacy_id)
       ]);
       setPatients(pData);
       setConsultations(cData);
       setMedicines(mData);
+      setRegisteredDoctors(docsData);
       if (pharm) setMyPharmacy(pharm);
     } catch (err) {
       console.error('Failed to load OPD data:', err);
@@ -514,6 +517,16 @@ export default function OpdPage() {
         >
           <Clock className="w-4 h-4" /> OPD Token Queue Board
         </button>
+        <button
+          onClick={() => setActiveTab('doctors')}
+          className={`pb-3 px-2 text-xs font-bold flex items-center gap-2 border-b-2 transition-colors ${
+            activeTab === 'doctors'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Stethoscope className="w-4 h-4" /> Registered Doctors ({registeredDoctors.length})
+        </button>
       </div>
 
       {/* TAB 1: e-Prescription Workspace */}
@@ -744,13 +757,28 @@ export default function OpdPage() {
             {/* Doctor Info & Fee */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Consulting Doctor</label>
-                <input 
-                  type="text"
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Consulting Registered Doctor</label>
+                <select 
                   value={doctorName}
-                  onChange={(e) => setDoctorName(e.target.value)}
+                  onChange={(e) => {
+                    setDoctorName(e.target.value);
+                    const selected = registeredDoctors.find(d => `${d.name} (${d.qualification})` === e.target.value || d.name === e.target.value);
+                    if (selected) {
+                      setConsultationFee(selected.consultationFee);
+                    }
+                  }}
                   className="w-full text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
-                />
+                >
+                  {registeredDoctors.length > 0 ? (
+                    registeredDoctors.map(doc => (
+                      <option key={doc.id} value={`${doc.name} (${doc.qualification})`}>
+                        {doc.name} • {doc.specialty} ({doc.roomNumber})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Dr. A. Sharma (MBBS, MD)">Dr. A. Sharma (MBBS, MD)</option>
+                  )}
+                </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Consultation Fee (₹)</label>
@@ -1312,6 +1340,62 @@ export default function OpdPage() {
           </div>
         </div>
       )}
+
+      {/* TAB 4: REGISTERED DOCTORS DIRECTORY */}
+      {activeTab === 'doctors' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-blue-500" />
+                  Clinic Registered Doctors Directory
+                </h3>
+                <p className="text-xs text-slate-400">View active OPD doctors, consultation room numbers, registration details, and fee structure connected to AI voice booking.</p>
+              </div>
+              <button
+                onClick={() => {
+                  window.location.href = '/settings';
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Manage Doctor Profiles
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {registeredDoctors.map(doc => (
+                <div key={doc.id} className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-3 relative hover:border-blue-500 transition-all">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                        {doc.specialty}
+                      </span>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white mt-2">{doc.name}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{doc.qualification}</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      ₹{doc.consultationFee}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between"><span>Cabin Room:</span> <strong className="text-slate-900 dark:text-white">{doc.roomNumber}</strong></div>
+                    <div className="flex justify-between"><span>MCI Reg No:</span> <strong className="text-slate-900 dark:text-white font-mono">{doc.regNumber}</strong></div>
+                    <div className="flex justify-between"><span>Mobile:</span> <strong className="text-slate-900 dark:text-white font-mono">{doc.phone}</strong></div>
+                    <div className="flex justify-between"><span>Days:</span> <strong className="text-slate-900 dark:text-white">{doc.availabilityDays.join(', ')}</strong></div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-400 font-medium text-center bg-slate-100 dark:bg-slate-800/60 p-2 rounded-lg">
+                    ⏰ {doc.timingSlots}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* VOICE APPOINTMENT MODAL */}
       <VoiceAgentModal
         isOpen={voiceModalOpen}
@@ -1335,8 +1419,28 @@ export default function OpdPage() {
             });
             setPatients(prev => [created, ...prev]);
             setSelectedPatient(created);
-            setActiveTab('prescribe');
-            showToast('success', `Voice OPD Appointment booked for ${data.name} (UHID: ${uhid})!`);
+
+            // Generate consultation token
+            const tokenNumber = `OPD-TK-${Math.floor(100 + Math.random() * 900)}`;
+            const assignedDoc = registeredDoctors.length > 0 ? registeredDoctors[0].name : (data.doctor || 'Dr. A. K. Sharma');
+            const fee = registeredDoctors.length > 0 ? registeredDoctors[0].consultationFee : 500;
+
+            const newConsultation = await db.createOpConsultation(profile.pharmacy_id, {
+              uhid,
+              patientName: data.name,
+              patientPhone: data.phone,
+              gender: data.gender || 'Male',
+              age: data.age || 30,
+              doctorName: assignedDoc,
+              consultationFee: fee,
+              tokenNumber,
+              medicines: [],
+              status: 'Waiting'
+            });
+
+            setConsultations(prev => [newConsultation, ...prev]);
+            setActiveTab('queue');
+            showToast('success', `Voice OPD Appointment confirmed for ${data.name}! Assigned Token ${tokenNumber}. Confirmation sent to ${data.phone}.`);
           } catch (err: any) {
             showToast('error', `Failed to book voice appointment: ${err.message}`);
           }

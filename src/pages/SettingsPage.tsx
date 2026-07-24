@@ -35,7 +35,9 @@ const pharmacySchema = z.object({
 type PersonalFormValues = z.infer<typeof personalSchema>;
 type PharmacyFormValues = z.infer<typeof pharmacySchema>;
 
-type SettingsTab = 'profile' | 'pharmacy' | 'subscription' | 'appearance' | 'advanced' | 'security';
+import { Stethoscope } from 'lucide-react';
+
+type SettingsTab = 'profile' | 'pharmacy' | 'doctors' | 'subscription' | 'appearance' | 'advanced' | 'security';
 
 export default function SettingsPage() {
   const { isDark, setTheme } = useTheme();
@@ -43,6 +45,19 @@ export default function SettingsPage() {
   const { profile, refreshProfile } = useAuth();
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [registeredDoctors, setRegisteredDoctors] = useState<import('../types').RegisteredDoctor[]>([]);
+  const [doctorModalOpen, setDoctorModalOpen] = useState(false);
+  const [newDoctor, setNewDoctor] = useState({
+    name: '',
+    qualification: 'MBBS, MD',
+    specialty: 'General Physician',
+    phone: '',
+    email: '',
+    regNumber: 'MCI-',
+    consultationFee: 500,
+    roomNumber: 'Cabin 101',
+    timingSlots: '09:00 AM - 01:00 PM, 05:00 PM - 09:00 PM'
+  });
   
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -102,6 +117,8 @@ export default function SettingsPage() {
           upiId: pharm.upiId || '',
           whatsappAdminPhone: pharm.whatsappAdminPhone || '',
         });
+        const docs = await db.getRegisteredDoctors(profile?.pharmacy_id || 'default-pharmacy');
+        setRegisteredDoctors(docs);
       } catch (err) {
         console.error(err);
       }
@@ -275,7 +292,19 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
             }`}
           >
             <Building2 className="h-4.5 w-4.5 shrink-0" />
-            <span>Pharmacy Profile</span>
+            <span>Pharmacy Details</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('doctors')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+              activeTab === 'doctors'
+                ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-extrabold border-l-4 border-blue-600'
+                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+            }`}
+          >
+            <Stethoscope className="h-4.5 w-4.5 shrink-0" />
+            <span>Registered Doctors ({registeredDoctors.length})</span>
           </button>
 
           <button
@@ -487,6 +516,199 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
                 </button>
               </div>
             </form>
+          )}
+
+          {/* TAB: REGISTERED DOCTORS PROFILES */}
+          {activeTab === 'doctors' && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-blue-500" />
+                    Registered Doctors &amp; OPD Consultation Profiles
+                  </h3>
+                  <p className="text-xs text-gray-500">Manage clinic doctors, medical qualifications, room numbers, consultation fees, and OPD availability connected to AI voice booking.</p>
+                </div>
+                <button
+                  onClick={() => setDoctorModalOpen(true)}
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Register New Doctor</span>
+                </button>
+              </div>
+
+              {/* Doctors Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {registeredDoctors.map(doc => (
+                  <div key={doc.id} className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 space-y-3 relative hover:border-blue-500/50 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                          {doc.specialty}
+                        </span>
+                        <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mt-1.5">{doc.name}</h4>
+                        <p className="text-xs text-gray-500">{doc.qualification}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        Fee: {formatCurrency(doc.consultationFee)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-950 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800/80">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Room / Cabin</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200">{doc.roomNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">MCI Reg No</span>
+                        <span className="font-mono text-gray-800 dark:text-gray-200">{doc.regNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Phone</span>
+                        <span className="font-mono text-gray-800 dark:text-gray-200">{doc.phone}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Schedule</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{doc.availabilityDays.join(', ')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs pt-1">
+                      <span className="text-[11px] text-gray-500 font-medium">{doc.timingSlots}</span>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Remove doctor profile ${doc.name}?`)) {
+                            await db.deleteRegisteredDoctor(profile?.pharmacy_id || 'default-pharmacy', doc.id);
+                            const updated = await db.getRegisteredDoctors(profile?.pharmacy_id || 'default-pharmacy');
+                            setRegisteredDoctors(updated);
+                            setNotification(`Doctor ${doc.name} removed successfully.`);
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-600 font-bold text-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Register Doctor Modal */}
+              {doctorModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+                  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl max-w-lg w-full p-6 space-y-4 text-gray-900 dark:text-white shadow-2xl">
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                      <h3 className="font-bold text-base flex items-center gap-2">
+                        <Stethoscope className="w-5 h-5 text-blue-500" />
+                        Register OPD Doctor Profile
+                      </h3>
+                      <button onClick={() => setDoctorModalOpen(false)} className="text-gray-400 hover:text-white">✕</button>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <label className="block text-gray-400 font-bold mb-1">Doctor Full Name</label>
+                        <input
+                          type="text"
+                          value={newDoctor.name}
+                          onChange={e => setNewDoctor({ ...newDoctor, name: e.target.value })}
+                          placeholder="Dr. Rajesh Kumar"
+                          className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">Qualification</label>
+                          <input
+                            type="text"
+                            value={newDoctor.qualification}
+                            onChange={e => setNewDoctor({ ...newDoctor, qualification: e.target.value })}
+                            placeholder="MBBS, MD"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">Specialty</label>
+                          <input
+                            type="text"
+                            value={newDoctor.specialty}
+                            onChange={e => setNewDoctor({ ...newDoctor, specialty: e.target.value })}
+                            placeholder="General Physician"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">Mobile Phone</label>
+                          <input
+                            type="text"
+                            value={newDoctor.phone}
+                            onChange={e => setNewDoctor({ ...newDoctor, phone: e.target.value })}
+                            placeholder="9876543210"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">MCI Reg Number</label>
+                          <input
+                            type="text"
+                            value={newDoctor.regNumber}
+                            onChange={e => setNewDoctor({ ...newDoctor, regNumber: e.target.value })}
+                            placeholder="MCI-49201"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">Consultation Fee (₹)</label>
+                          <input
+                            type="number"
+                            value={newDoctor.consultationFee}
+                            onChange={e => setNewDoctor({ ...newDoctor, consultationFee: Number(e.target.value) })}
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-400 font-bold mb-1">Room / Cabin Number</label>
+                          <input
+                            type="text"
+                            value={newDoctor.roomNumber}
+                            onChange={e => setNewDoctor({ ...newDoctor, roomNumber: e.target.value })}
+                            placeholder="Cabin 101"
+                            className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        onClick={() => setDoctorModalOpen(false)}
+                        className="px-4 py-2 text-gray-400 hover:text-white font-bold text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!newDoctor.name) return alert('Doctor name required');
+                          await db.saveRegisteredDoctor(profile?.pharmacy_id || 'default-pharmacy', newDoctor);
+                          const updated = await db.getRegisteredDoctors(profile?.pharmacy_id || 'default-pharmacy');
+                          setRegisteredDoctors(updated);
+                          setDoctorModalOpen(false);
+                          setNotification(`Registered doctor ${newDoctor.name} added successfully!`);
+                        }}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl"
+                      >
+                        Save Doctor Profile
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* TAB 3: SUBSCRIPTION PORTAL */}

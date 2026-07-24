@@ -19,6 +19,7 @@ import {
   Notification,
   NotificationType,
   PurchaseOrder,
+  RegisteredDoctor,
 } from '../types';
 import { formatCurrency } from '../utils/currency';
 
@@ -1637,4 +1638,114 @@ export async function updateOpConsultationStatus(pharmacyId: string, id: string,
   const existing = await getOpConsultations(pharmacyId);
   const updated = existing.map(item => item.id === id ? { ...item, status } : item);
   localStorage.setItem(`${STORAGE_CONSULTATIONS_KEY}_${pharmacyId}`, JSON.stringify(updated));
-}
+}
+
+// ==========================================
+// REGISTERED DOCTORS MANAGEMENT
+// ==========================================
+const STORAGE_DOCTORS_KEY = 'livafil_registered_doctors';
+
+const INITIAL_REGISTERED_DOCTORS: RegisteredDoctor[] = [
+  {
+    id: 'doc-101',
+    pharmacyId: 'default-pharmacy',
+    name: 'Dr. A. K. Sharma',
+    qualification: 'MBBS, MD (General Medicine)',
+    specialty: 'General Physician',
+    phone: '9876543210',
+    email: 'dr.sharma@livafil.com',
+    regNumber: 'MCI-49201',
+    consultationFee: 500,
+    roomNumber: 'Cabin 101',
+    availabilityDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    timingSlots: '09:00 AM - 01:00 PM, 05:00 PM - 09:00 PM',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'doc-102',
+    pharmacyId: 'default-pharmacy',
+    name: 'Dr. Priya Patel',
+    qualification: 'MBBS, DCH (Pediatrics)',
+    specialty: 'Pediatric Specialist',
+    phone: '9812345678',
+    email: 'dr.priya@livafil.com',
+    regNumber: 'MCI-38102',
+    consultationFee: 600,
+    roomNumber: 'Cabin 104',
+    availabilityDays: ['Mon', 'Wed', 'Fri', 'Sat'],
+    timingSlots: '10:00 AM - 02:00 PM, 04:00 PM - 08:00 PM',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'doc-103',
+    pharmacyId: 'default-pharmacy',
+    name: 'Dr. Rajesh Reddy',
+    qualification: 'MBBS, DM (Cardiology)',
+    specialty: 'Cardiologist & Internal Med',
+    phone: '9765432109',
+    email: 'dr.rajesh@livafil.com',
+    regNumber: 'MCI-51920',
+    consultationFee: 800,
+    roomNumber: 'Cabin 201',
+    availabilityDays: ['Tue', 'Thu', 'Sat'],
+    timingSlots: '11:00 AM - 04:00 PM',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export async function getRegisteredDoctors(pharmacyId: string): Promise<RegisteredDoctor[]> {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {}
+
+  localStorage.setItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`, JSON.stringify(INITIAL_REGISTERED_DOCTORS));
+  return INITIAL_REGISTERED_DOCTORS;
+}
+
+export async function saveRegisteredDoctor(pharmacyId: string, doctor: Partial<RegisteredDoctor>): Promise<RegisteredDoctor> {
+  const existing = await getRegisteredDoctors(pharmacyId);
+  let savedDoc: RegisteredDoctor;
+
+  if (doctor.id) {
+    savedDoc = {
+      ...existing.find(d => d.id === doctor.id)!,
+      ...doctor
+    } as RegisteredDoctor;
+    const updated = existing.map(d => d.id === doctor.id ? savedDoc : d);
+    localStorage.setItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  } else {
+    savedDoc = {
+      id: `doc-${Date.now()}`,
+      pharmacyId,
+      name: doctor.name || 'Dr. New Doctor',
+      qualification: doctor.qualification || 'MBBS',
+      specialty: doctor.specialty || 'General Medicine',
+      phone: doctor.phone || '9000000000',
+      email: doctor.email || 'doctor@livafil.com',
+      regNumber: doctor.regNumber || 'MCI-REG-000',
+      consultationFee: doctor.consultationFee || 500,
+      roomNumber: doctor.roomNumber || 'Cabin 101',
+      availabilityDays: doctor.availabilityDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      timingSlots: doctor.timingSlots || '09:00 AM - 05:00 PM',
+      status: doctor.status || 'Active',
+      createdAt: new Date().toISOString()
+    };
+    const updated = [savedDoc, ...existing];
+    localStorage.setItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  }
+
+  return savedDoc;
+}
+
+export async function deleteRegisteredDoctor(pharmacyId: string, id: string): Promise<void> {
+  const existing = await getRegisteredDoctors(pharmacyId);
+  const updated = existing.filter(d => d.id !== id);
+  localStorage.setItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+}
+

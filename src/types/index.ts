@@ -406,12 +406,29 @@ export interface OpConsultation {
     sugar?: number;
   };
   diagnosis?: string;
-  medicines: OpPrescriptionItem[];
   consultationFee: number;
   tokenNumber: string;
   status: OpConsultationStatus;
   createdAt: string;
 }
+
+export interface RegisteredDoctor {
+  id: string;
+  pharmacyId: string;
+  name: string;
+  qualification: string;
+  specialty: string;
+  phone: string;
+  email: string;
+  regNumber: string;
+  consultationFee: number;
+  roomNumber: string;
+  availabilityDays: string[];
+  timingSlots: string;
+  status: 'Active' | 'On Leave' | 'Inactive';
+  createdAt: string;
+}
+
 
 
 
