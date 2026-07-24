@@ -406,6 +406,7 @@ export interface OpConsultation {
     sugar?: number;
   };
   diagnosis?: string;
+  medicines: OpPrescriptionItem[];
   consultationFee: number;
   tokenNumber: string;
   status: OpConsultationStatus;

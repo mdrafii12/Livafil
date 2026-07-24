@@ -1425,7 +1425,7 @@ export default function OpdPage() {
             const assignedDoc = registeredDoctors.length > 0 ? registeredDoctors[0].name : (data.doctor || 'Dr. A. K. Sharma');
             const fee = registeredDoctors.length > 0 ? registeredDoctors[0].consultationFee : 500;
 
-            const newConsultation = await db.createOpConsultation(profile.pharmacy_id, {
+            const newConsultation = await db.addOpConsultation(profile.pharmacy_id, {
               uhid,
               patientName: data.name,
               patientPhone: data.phone,
