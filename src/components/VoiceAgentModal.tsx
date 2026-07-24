@@ -25,6 +25,10 @@ export default function VoiceAgentModal({
   const [statusMessage, setStatusMessage] = useState('Click microphone or speak to start...');
   const [voiceMuted, setVoiceMuted] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [elevenLabsAgentId, setElevenLabsAgentId] = useState(() => {
+    return localStorage.getItem('livafil_elevenlabs_agent_id') || '';
+  });
+  const [showConfig, setShowConfig] = useState(false);
 
   const recognitionRef = useRef<any>(null);
 
@@ -242,6 +246,13 @@ export default function VoiceAgentModal({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowConfig(!showConfig)}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-xs font-semibold flex items-center gap-1"
+              title="Configure ElevenLabs Agent ID"
+            >
+              <RefreshCw className="h-4 w-4 text-blue-400" /> ElevenLabs ID
+            </button>
+            <button
               onClick={() => setVoiceMuted(!voiceMuted)}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               title={voiceMuted ? 'Unmute Speech' : 'Mute Speech'}
@@ -257,10 +268,44 @@ export default function VoiceAgentModal({
           </div>
         </div>
 
+        {/* ElevenLabs Agent ID Settings Bar */}
+        {showConfig && (
+          <div className="p-4 bg-slate-950 border-b border-slate-800 space-y-2">
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+              ElevenLabs Agent ID (Optional)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={elevenLabsAgentId}
+                onChange={(e) => {
+                  setElevenLabsAgentId(e.target.value);
+                  localStorage.setItem('livafil_elevenlabs_agent_id', e.target.value);
+                }}
+                placeholder="Paste ElevenLabs Agent ID (e.g. agent_abc123xyz)"
+                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Found in your ElevenLabs Dashboard &gt; Agent Overview &gt; Agent ID. Leave empty to use Livafil Built-in Voice Engine.
+            </p>
+          </div>
+        )}
+
         {/* Voice Visualizer Area */}
         <div className="p-8 text-center flex flex-col items-center justify-center bg-slate-950/50">
           
-          {/* Animated Microphone Circle */}
+          {elevenLabsAgentId ? (
+            <div className="my-2 flex flex-col items-center justify-center space-y-3">
+              <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-4 h-4 animate-spin" /> Connected to ElevenLabs Agent
+              </span>
+              {/* Official ElevenLabs Web Component Widget */}
+              {React.createElement('elevenlabs-convai', { 'agent-id': elevenLabsAgentId })}
+            </div>
+          ) : (
+            <>
+              {/* Animated Microphone Circle */}
           <div className="relative mb-6">
             {isListening && (
               <>
@@ -302,15 +347,17 @@ export default function VoiceAgentModal({
             </div>
           )}
 
-          {/* AI Response Output */}
-          {agentResponse && (
-            <div className="mt-4 p-4 bg-blue-950/40 border border-blue-800/50 rounded-2xl text-sm leading-relaxed text-blue-100 text-left w-full flex gap-3">
-              <Sparkles className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-1">Livafil Voice Response</p>
-                <p className="font-medium text-slate-100">{agentResponse}</p>
-              </div>
-            </div>
+              {/* AI Response Output */}
+              {agentResponse && (
+                <div className="mt-4 p-4 bg-blue-950/40 border border-blue-800/50 rounded-2xl text-sm leading-relaxed text-blue-100 text-left w-full flex gap-3">
+                  <Sparkles className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-1">Livafil Voice Response</p>
+                    <p className="font-medium text-slate-100">{agentResponse}</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
