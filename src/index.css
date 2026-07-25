@@ -52,7 +52,14 @@ elevenlabs-convai {
   align-items: center !important;
   position: relative !important;
   width: 100% !important;
+  max-width: 100% !important;
   margin: 0 auto !important;
+  text-align: center !important;
+}
+
+elevenlabs-convai * {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 @media print {

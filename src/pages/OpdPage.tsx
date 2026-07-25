@@ -76,6 +76,15 @@ export default function OpdPage() {
     }
   }, [profile]);
 
+  // Auto-sync OPD queue & UHID registry when Voice Modal is open or closed
+  useEffect(() => {
+    if (!profile?.pharmacy_id || !voiceModalOpen) return;
+    const interval = setInterval(() => {
+      loadData();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [profile, voiceModalOpen]);
+
   const loadData = async () => {
     if (!profile?.pharmacy_id) return;
     setLoading(true);
