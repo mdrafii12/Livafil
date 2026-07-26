@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://vlxqqrddwjsarfotywqv.supabase.co';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZseHFxcmRkd2pzYXJmb3R5d3F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NTY4MDQsImV4cCI6MjA5OTIzMjgwNH0._oDGakUZ960fBcWLlh-FK5P11kXTJsqIiXL4-wfb580';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+// Server-side only. NEVER prefix this with VITE_ or it ships to the browser bundle.
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -13,6 +14,26 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+// Require the caller's Supabase JWT and verify they're a platform admin
+  // before returning cross-tenant data.
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ status: 'error', message: 'Missing auth token' });
+
+  const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
+  if (userErr || !userData?.user) {
+    return res.status(401).json({ status: 'error', message: 'Invalid session' });
+  }
+
+  const { data: callerProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('is_platform_admin')
+    .eq('id', userData.user.id)
+    .single();
+
+ if (!callerProfile?.is_platform_admin) {
+    return res.status(403).json({ status: 'error', message: 'Admin access required' });
+ }
 
   // POST: Create/Onboard New Pharmacy
   if (req.method === 'POST') {

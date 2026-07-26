@@ -32,7 +32,8 @@ import SupportPage from './pages/SupportPage';
 import BillingPage from './pages/BillingPage';
 import RemindersPage from './pages/RemindersPage';
 import OpdPage from './pages/OpdPage';
-import LabReportsPage from './pages/LabReportsPage';
+import LabReportsPage from './pages/LabReportsPage';  
+import PlatformAdminRoute from './components/PlatformAdminRoute';
 
 function Protected({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: ('Owner' | 'Manager' | 'Staff')[] }) {
   return (
@@ -75,7 +76,7 @@ export default function App() {
             <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
             <Route path="/exchange" element={<Protected><ExchangePage /></Protected>} />
             <Route path="/recovery" element={<Protected><RecoveryPage /></Protected>} />
-            <Route path="/admin" element={<Protected><SuperAdminPage /></Protected>} />
+            <Route path="/admin" element={<Protected><PlatformAdminRoute><SuperAdminPage /></PlatformAdminRoute></Protected>} />
             <Route path="/support" element={<Protected><SupportPage /></Protected>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />

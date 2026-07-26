@@ -17,6 +17,7 @@ import {
   SubscriptionPlan, SubscriptionStatus 
 } from '../types';
 import { formatCurrency } from '../utils/currency';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 export default function SuperAdminPage() {
   const { profile } = useAuth();
@@ -70,6 +71,12 @@ const syncDB = async () => {
   useEffect(() => {
     syncDB();
   }, []);
+
+
+// ...inside SuperAdminPage component, after the initial syncDB() effect:
+useRealtimeTable('pharmacies', syncDB);
+useRealtimeTable('support_tickets', syncDB);
+useRealtimeTable('profiles', syncDB);
 
   // System Stats Calculations
   const mrr = 149 * 2 + 49 * 1; // 2 Pros (₹149) and 1 Starter (₹49) as a simulation

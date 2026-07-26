@@ -7,6 +7,7 @@ import {
 import * as db from '../services/supabaseData';
 import { useAuth } from '../contexts/AuthContext';
 import { SupportTicket, TicketCategory, TicketPriority } from '../types';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 interface FAQ {
   q: string;
@@ -45,6 +46,11 @@ const syncTickets = async () => {
   useEffect(() => {
     syncTickets();
   }, []);
+
+// NEW: re-run syncTickets whenever any support ticket or reply changes,
+// so a platform admin's reply shows up here live.
+useRealtimeTable('support_tickets', syncTickets);
+useRealtimeTable('ticket_replies', syncTickets);
 
  const handleRaiseTicket = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -114,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'exchange', label: 'Livafil Exchange', path: '/exchange', icon: ArrowLeftRight, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'users', label: 'Staff Management', path: '/users', icon: Users, roles: ['Owner', 'Manager'] },
     { name: 'support', label: 'Support Hub', path: '/support', icon: HelpCircle, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'admin', label: 'Super Admin', path: '/admin', icon: ShieldAlert, roles: ['Owner'] },
+    { name: 'admin', label: 'Super Admin', path: '/admin', icon: ShieldAlert, roles: ['Owner', 'Manager', 'Staff'], platformAdminOnly: true },
     { name: 'settings', label: 'Settings', path: '/settings', icon: Settings, roles: ['Owner', 'Manager', 'Staff'] },
   ];
 
@@ -143,7 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className="flex-1 px-4 py-3 space-y-1 overflow-y-auto">
           {menuItems
-            .filter(item => item.roles.includes(profile.role))
+            .filter(item => item.roles.includes(profile.role) && (!item.platformAdminOnly || profile.is_platform_admin))
             .map((item) => {
               const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
               const Icon = item.icon;
@@ -269,7 +269,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ))}
             </div>
           </div>
-
+{profile?.is_platform_admin && location.pathname !== '/admin' && (
+  <Link
+    to="/admin"
+    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+               text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+    title="Open Admin Portal"
+  >
+    <ShieldAlert className="h-3.5 w-3.5" />
+    Admin Portal
+  </Link>
+)}
           {/* RIGHT SIDEBAR UTILITIES */}
           <div className="flex items-center space-x-3">
             {/* Realtime Online/Offline Sync Indicator */}
