@@ -112,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'exchange', label: 'Livafil Exchange', path: '/exchange', icon: ArrowLeftRight, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'users', label: 'Staff Management', path: '/users', icon: Users, roles: ['Owner', 'Manager'] },
     { name: 'support', label: 'Support Hub', path: '/support', icon: HelpCircle, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'admin', label: 'Super Admin', path: '/admin', icon: ShieldAlert, roles: ['Owner', 'Manager'] },
+    { name: 'admin', label: 'Super Admin', path: '/admin', icon: ShieldAlert, roles: ['Owner'] },
     { name: 'settings', label: 'Settings', path: '/settings', icon: Settings, roles: ['Owner', 'Manager', 'Staff'] },
   ];
 
