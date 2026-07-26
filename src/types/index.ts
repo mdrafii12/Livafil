@@ -430,6 +430,71 @@ export interface RegisteredDoctor {
   createdAt: string;
 }
 
+// --- HMS LAB & DIAGNOSTIC REPORTS TYPES ---
+export interface LabTestMaster {
+  id: string;
+  pharmacyId?: string;
+  code: string;
+  name: string;
+  category: string; // e.g. 'Haematology', 'Biochemistry', 'Radiology', 'Pathology'
+  sampleType: string; // e.g. 'Blood', 'Urine', 'Swab'
+  price: number;
+  normalRange: string; // e.g. '13.5 - 17.5 g/dL'
+  unit: string; // e.g. 'g/dL', 'mg/dL'
+  parameters?: {
+    name: string;
+    unit: string;
+    normalRange: string;
+    defaultValue?: string;
+  }[];
+  description?: string;
+  createdAt: string;
+}
+
+export type LabReportStatus = 'Ordered' | 'Sample Collected' | 'In Progress' | 'Completed' | 'Cancelled';
+
+export interface LabReportParameterResult {
+  parameterName: string;
+  observedValue: string;
+  unit: string;
+  normalRange: string;
+  flag: 'Normal' | 'High' | 'Low' | 'Abnormal';
+}
+
+export interface LabReport {
+  id: string;
+  pharmacyId: string;
+  reportNumber: string; // e.g. LAB-20260726-001
+  uhid: string;
+  patientName: string;
+  patientAge: number;
+  patientGender: 'Male' | 'Female' | 'Other';
+  patientPhone: string;
+  doctorName: string;
+  testId: string;
+  testName: string;
+  category: string;
+  status: LabReportStatus;
+  sampleCollectedAt?: string;
+  completedAt?: string;
+  results: LabReportParameterResult[];
+  technicianNotes?: string;
+  labTechnicianName?: string;
+  price: number;
+  createdAt: string;
+}
+
+// --- OFFLINE SYNC QUEUE ITEM ---
+export interface OfflineSyncItem {
+  id: string;
+  entity: 'patient' | 'op_consultation' | 'lab_report' | 'bill' | 'medicine';
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  payload: any;
+  createdAt: string;
+  synced: boolean;
+}
+
+
 
 
 

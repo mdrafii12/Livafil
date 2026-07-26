@@ -1748,4 +1748,262 @@ export async function deleteRegisteredDoctor(pharmacyId: string, id: string): Pr
   const updated = existing.filter(d => d.id !== id);
   localStorage.setItem(`${STORAGE_DOCTORS_KEY}_${pharmacyId}`, JSON.stringify(updated));
 }
+
+// ==========================================
+// DAILY RESETTING OP TOKEN GENERATOR & UHID
+// ==========================================
+export async function getNextDailyOpToken(pharmacyId: string): Promise<{ tokenNumber: string; dailySequence: number }> {
+  const consultations = await getOpConsultations(pharmacyId);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const todaysConsultations = consultations.filter(c => {
+    if (!c.createdAt) return false;
+    return c.createdAt.split('T')[0] === todayStr;
+  });
+
+  const dailySequence = todaysConsultations.length + 1;
+  const tokenNumber = `OP-${dailySequence}`;
+  return { tokenNumber, dailySequence };
+}
+
+// ==========================================
+// HMS LAB & DIAGNOSTIC REPORTS SERVICES
+// ==========================================
+const STORAGE_LAB_TESTS_KEY = 'livafil_lab_tests_master';
+const STORAGE_LAB_REPORTS_KEY = 'livafil_lab_reports';
+
+const INITIAL_LAB_TESTS: import('../types').LabTestMaster[] = [
+  {
+    id: 'lab-101',
+    code: 'HAEM-01',
+    name: 'Complete Blood Count (CBC)',
+    category: 'Haematology',
+    sampleType: 'Blood (EDTA)',
+    price: 350,
+    normalRange: 'See Parameters',
+    unit: 'Multi',
+    parameters: [
+      { name: 'Hemoglobin (Hb)', unit: 'g/dL', normalRange: '13.5 - 17.5 (M) / 12.0 - 15.5 (F)' },
+      { name: 'Total WBC Count', unit: '/cu mm', normalRange: '4,000 - 11,000' },
+      { name: 'Platelet Count', unit: 'lakhs/cu mm', normalRange: '1.5 - 4.5' },
+      { name: 'RBC Count', unit: 'million/cu mm', normalRange: '4.5 - 5.5' },
+      { name: 'PCV / Hematocrit', unit: '%', normalRange: '40 - 50%' }
+    ],
+    description: 'Comprehensive analysis of red cells, white cells, and platelets.',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'lab-102',
+    code: 'BIO-01',
+    name: 'Fasting Blood Sugar (FBS)',
+    category: 'Biochemistry',
+    sampleType: 'Blood (Fluoride)',
+    price: 120,
+    normalRange: '70 - 99',
+    unit: 'mg/dL',
+    parameters: [
+      { name: 'Fasting Blood Glucose', unit: 'mg/dL', normalRange: '70 - 99' }
+    ],
+    description: 'Evaluates baseline blood glucose levels after 8 hours fast.',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'lab-103',
+    code: 'BIO-02',
+    name: 'Lipid Profile (Full)',
+    category: 'Biochemistry',
+    sampleType: 'Serum',
+    price: 650,
+    normalRange: 'See Parameters',
+    unit: 'mg/dL',
+    parameters: [
+      { name: 'Total Cholesterol', unit: 'mg/dL', normalRange: '< 200' },
+      { name: 'Triglycerides', unit: 'mg/dL', normalRange: '< 150' },
+      { name: 'HDL Cholesterol', unit: 'mg/dL', normalRange: '> 40 (M) / > 50 (F)' },
+      { name: 'LDL Cholesterol', unit: 'mg/dL', normalRange: '< 100' }
+    ],
+    description: 'Measures cardiac risk markers and cholesterol spectrum.',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'lab-104',
+    code: 'BIO-03',
+    name: 'Liver Function Test (LFT)',
+    category: 'Biochemistry',
+    sampleType: 'Serum',
+    price: 550,
+    normalRange: 'See Parameters',
+    unit: 'U/L',
+    parameters: [
+      { name: 'Bilirubin Total', unit: 'mg/dL', normalRange: '0.2 - 1.2' },
+      { name: 'SGOT / AST', unit: 'U/L', normalRange: '5 - 40' },
+      { name: 'SGPT / ALT', unit: 'U/L', normalRange: '7 - 56' },
+      { name: 'Alkaline Phosphatase', unit: 'U/L', normalRange: '44 - 147' }
+    ],
+    description: 'Evaluates liver enzymatic and metabolic functions.',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'lab-105',
+    code: 'RAD-01',
+    name: 'Chest X-Ray PA View',
+    category: 'Radiology',
+    sampleType: 'Imaging',
+    price: 400,
+    normalRange: 'Normal lung fields & cardiac silhouette',
+    unit: 'N/A',
+    parameters: [
+      { name: 'Lung Fields', unit: 'Visual', normalRange: 'Clear' },
+      { name: 'Cardiac Silhouette', unit: 'Visual', normalRange: 'Normal Size' }
+    ],
+    description: 'Digital X-ray for lung congestion or chest pathology.',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export async function getLabTestsMaster(pharmacyId?: string): Promise<import('../types').LabTestMaster[]> {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_LAB_TESTS_KEY}_${pharmacyId || 'global'}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+
+  localStorage.setItem(`${STORAGE_LAB_TESTS_KEY}_${pharmacyId || 'global'}`, JSON.stringify(INITIAL_LAB_TESTS));
+  return INITIAL_LAB_TESTS;
+}
+
+export async function addLabTestMaster(pharmacyId: string, test: Omit<import('../types').LabTestMaster, 'id' | 'createdAt'>): Promise<import('../types').LabTestMaster> {
+  const existing = await getLabTestsMaster(pharmacyId);
+  const newTest: import('../types').LabTestMaster = {
+    id: `labtest_${Date.now()}`,
+    ...test,
+    createdAt: new Date().toISOString()
+  };
+  const updated = [newTest, ...existing];
+  localStorage.setItem(`${STORAGE_LAB_TESTS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  return newTest;
+}
+
+export async function getLabReports(pharmacyId: string): Promise<import('../types').LabReport[]> {
+  try {
+    const { data, error } = await supabase
+      .from('lab_reports')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((r: any) => ({
+        id: r.id,
+        pharmacyId: r.pharmacy_id,
+        reportNumber: r.report_number,
+        uhid: r.uhid,
+        patientName: r.patient_name,
+        patientAge: r.patient_age,
+        patientGender: r.patient_gender,
+        patientPhone: r.patient_phone,
+        doctorName: r.doctor_name,
+        testId: r.test_id,
+        testName: r.test_name,
+        category: r.category,
+        status: r.status,
+        sampleCollectedAt: r.sample_collected_at,
+        completedAt: r.completed_at,
+        results: r.results || [],
+        technicianNotes: r.technician_notes,
+        labTechnicianName: r.lab_technician_name,
+        price: r.price || 0,
+        createdAt: r.created_at
+      }));
+    }
+  } catch (e) {}
+
+  const raw = localStorage.getItem(`${STORAGE_LAB_REPORTS_KEY}_${pharmacyId}`);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) {}
+  }
+  return [];
+}
+
+export async function createLabReport(pharmacyId: string, reportData: Omit<import('../types').LabReport, 'id' | 'createdAt' | 'pharmacyId' | 'reportNumber'>): Promise<import('../types').LabReport> {
+  const existing = await getLabReports(pharmacyId);
+  const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const reportNumber = `LAB-${todayStr}-${(existing.length + 1).toString().padStart(3, '0')}`;
+
+  const newReport: import('../types').LabReport = {
+    id: `lbr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    pharmacyId,
+    reportNumber,
+    ...reportData,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    await supabase.from('lab_reports').insert([{
+      pharmacy_id: pharmacyId,
+      report_number: reportNumber,
+      uhid: reportData.uhid,
+      patient_name: reportData.patientName,
+      patient_age: reportData.patientAge,
+      patient_gender: reportData.patientGender,
+      patient_phone: reportData.patientPhone,
+      doctor_name: reportData.doctorName,
+      test_id: reportData.testId,
+      test_name: reportData.testName,
+      category: reportData.category,
+      status: reportData.status,
+      results: reportData.results,
+      technician_notes: reportData.technicianNotes,
+      lab_technician_name: reportData.labTechnicianName,
+      price: reportData.price
+    }]);
+  } catch (err) {}
+
+  const updated = [newReport, ...existing];
+  localStorage.setItem(`${STORAGE_LAB_REPORTS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  return newReport;
+}
+
+export async function updateLabReportResults(
+  pharmacyId: string, 
+  reportId: string, 
+  results: import('../types').LabReportParameterResult[], 
+  technicianNotes?: string, 
+  labTechnicianName?: string,
+  status: import('../types').LabReportStatus = 'Completed'
+): Promise<import('../types').LabReport> {
+  const existing = await getLabReports(pharmacyId);
+  let updatedReport!: import('../types').LabReport;
+
+  const updatedList = existing.map(r => {
+    if (r.id === reportId) {
+      updatedReport = {
+        ...r,
+        results,
+        technicianNotes: technicianNotes !== undefined ? technicianNotes : r.technicianNotes,
+        labTechnicianName: labTechnicianName || r.labTechnicianName || 'Chief Lab Tech',
+        status,
+        completedAt: new Date().toISOString()
+      };
+      return updatedReport;
+    }
+    return r;
+  });
+
+  try {
+    await supabase
+      .from('lab_reports')
+      .update({
+        results,
+        technician_notes: technicianNotes,
+        lab_technician_name: labTechnicianName || 'Chief Lab Tech',
+        status,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', reportId);
+  } catch (err) {}
+
+  localStorage.setItem(`${STORAGE_LAB_REPORTS_KEY}_${pharmacyId}`, JSON.stringify(updatedList));
+  return updatedReport;
+}
+
 

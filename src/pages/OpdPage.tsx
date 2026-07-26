@@ -199,7 +199,7 @@ export default function OpdPage() {
     }
 
     try {
-      const tokenNum = `T-${String(consultations.length + 1).padStart(3, '0')}`;
+      const { tokenNumber: tokenNum } = await db.getNextDailyOpToken(profile.pharmacy_id);
       const status = statusOverride || 'Completed';
 
       const created = await db.addOpConsultation(profile.pharmacy_id, {
@@ -1208,36 +1208,17 @@ export default function OpdPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
-                  <select 
-                    value={newPatient.gender}
-                    onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 dark:text-white"
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Blood Group</label>
-                  <select 
-                    value={newPatient.bloodGroup}
-                    onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 dark:text-white"
-                  >
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
+                <select 
+                  value={newPatient.gender}
+                  onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 dark:text-white"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>

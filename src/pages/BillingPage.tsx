@@ -102,21 +102,30 @@ export default function BillingPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
+  // OPD Patients & Consultations for instant auto-fetch
+  const [opdPatients, setOpdPatients] = useState<import('../types').Patient[]>([]);
+  const [opdConsultations, setOpdConsultations] = useState<import('../types').OpConsultation[]>([]);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+
   // Load Initial DB States
   const loadDBState = async () => {
     try {
-      const [m, b, c, bl, p] = await Promise.all([
+      const [m, b, c, bl, p, patientsData, consultationsData] = await Promise.all([
         db.getMedicines(),
         db.getBatches(),
         db.getCategories(),
         db.getBills(),
-        profile?.pharmacy_id ? db.getMyPharmacy(profile.pharmacy_id) : Promise.resolve(null)
+        profile?.pharmacy_id ? db.getMyPharmacy(profile.pharmacy_id) : Promise.resolve(null),
+        profile?.pharmacy_id ? db.getPatients(profile.pharmacy_id).catch(() => []) : Promise.resolve([]),
+        profile?.pharmacy_id ? db.getOpConsultations(profile.pharmacy_id).catch(() => []) : Promise.resolve([])
       ]);
       setMedicines(m);
       setBatches(b);
       setCategories(c);
       setBills(bl);
       if (p) setPharmacy(p);
+      setOpdPatients(patientsData || []);
+      setOpdConsultations(consultationsData || []);
     } catch (err) {
       console.error(err);
     }
@@ -1463,16 +1472,132 @@ export default function BillingPage() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Full Name</label>
+              <div className="flex flex-col gap-3 relative">
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Full Name (Auto-search Registered Patients)</label>
+                    {opdPatients.length > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
+                        {opdPatients.length} Registered OPD Patients
+                      </span>
+                    )}
+                  </div>
                   <input 
                     type="text"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Guest Patient / Walker"
-                    className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-emerald-500"
+                    onFocus={() => setShowPatientDropdown(true)}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      setShowPatientDropdown(true);
+                    }}
+                    placeholder="Type Name, Phone or UHID..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-emerald-500 font-medium"
                   />
+
+                  {/* AUTOCOMPLETE PATIENT SUGGESTION DROPDOWN */}
+                  {showPatientDropdown && (customerName.trim().length > 0 || customerPhone.trim().length > 0) && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-800/60 text-[10px] font-extrabold uppercase text-slate-400 flex items-center justify-between">
+                        <span>Matching OPD Patients</span>
+                        <button type="button" onClick={() => setShowPatientDropdown(false)} className="text-slate-400 hover:text-slate-600">Close ✕</button>
+                      </div>
+
+                      {opdPatients.filter(p => {
+                        const q = (customerName || customerPhone).toLowerCase().trim();
+                        return p.name.toLowerCase().includes(q) || p.phone.includes(q) || p.uhid.toLowerCase().includes(q);
+                      }).length === 0 ? (
+                        <div className="p-3 text-xs text-slate-400 text-center">No registered patient matched. You can type guest details manually.</div>
+                      ) : (
+                        opdPatients.filter(p => {
+                          const q = (customerName || customerPhone).toLowerCase().trim();
+                          return p.name.toLowerCase().includes(q) || p.phone.includes(q) || p.uhid.toLowerCase().includes(q);
+                        }).map(p => {
+                          const consultation = opdConsultations.find(c => c.uhid === p.uhid);
+                          return (
+                            <div 
+                              key={p.id}
+                              className="p-3 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20 transition-colors flex items-center justify-between cursor-pointer group"
+                              onClick={() => {
+                                setCustomerName(p.name);
+                                setCustomerPhone(p.phone);
+                                setShowPatientDropdown(false);
+                                showToast('success', `Selected patient: ${p.name} (${p.uhid})`);
+                              }}
+                            >
+                              <div>
+                                <div className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 flex items-center gap-1.5">
+                                  {p.name}
+                                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-bold text-blue-600 dark:text-blue-400">{p.uhid}</span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  Phone: {p.phone} • {p.gender}, {p.age}y {p.bloodGroup ? `• Blood: ${p.bloodGroup}` : ''}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                {consultation && consultation.medicines.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCustomerName(p.name);
+                                      setCustomerPhone(p.phone);
+                                      setShowPatientDropdown(false);
+                                      // Load OPD medicines into cart
+                                      if (consultation.medicines.length > 0) {
+                                        let addedCount = 0;
+                                        consultation.medicines.forEach(item => {
+                                          const med = medicines.find(m => m.id === item.medicineId || m.name.toLowerCase().includes(item.medicineName.toLowerCase()) || item.medicineName.toLowerCase().includes(m.name.toLowerCase()));
+                                          if (med) {
+                                            const validBatch = batches.find(b => b.medicineId === med.id && b.quantity > 0);
+                                            if (validBatch) {
+                                              setCart(prev => {
+                                                if (prev.some(c => c.batchId === validBatch.id)) return prev;
+                                                const discountedPrice = validBatch.sellingPrice;
+                                                const taxRate = 12;
+                                                const qty = item.quantity || 10;
+                                                const sub = parseFloat((qty * discountedPrice * (1 + taxRate / 100)).toFixed(2));
+                                                return [...prev, {
+                                                  id: 'bi_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+                                                  billId: '',
+                                                  medicineId: med.id,
+                                                  batchId: validBatch.id,
+                                                  medicineName: med.name,
+                                                  batchNumber: validBatch.batchNumber,
+                                                  quantity: qty,
+                                                  mrp: validBatch.mrp,
+                                                  sellingPrice: validBatch.sellingPrice,
+                                                  discount: 0,
+                                                  tax: taxRate,
+                                                  subtotal: sub,
+                                                  maxQty: validBatch.quantity,
+                                                  expDate: validBatch.expiryDate
+                                                }];
+                                              });
+                                              addedCount++;
+                                            }
+                                          }
+                                        });
+                                        if (addedCount > 0) {
+                                          showToast('success', `Loaded ${addedCount} prescribed medicines into billing cart!`);
+                                        } else {
+                                          showToast('error', 'Medicines in prescription could not be matched to in-stock batches.');
+                                        }
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow-sm transition-all flex items-center gap-1"
+                                  >
+                                    <Sparkles className="w-3 h-3" /> Load OPD Rx ({consultation.medicines.length})
+                                  </button>
+                                )}
+                                <span className="text-[10px] font-bold text-slate-400 group-hover:text-emerald-600">Select ➔</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1481,9 +1606,13 @@ export default function BillingPage() {
                     <input 
                       type="text"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-emerald-500"
+                      onFocus={() => setShowPatientDropdown(true)}
+                      onChange={(e) => {
+                        setCustomerPhone(e.target.value);
+                        setShowPatientDropdown(true);
+                      }}
+                      placeholder="Type phone number..."
+                      className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-emerald-500 font-medium"
                     />
                   </div>
                   <div>

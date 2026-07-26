@@ -32,6 +32,7 @@ import SupportPage from './pages/SupportPage';
 import BillingPage from './pages/BillingPage';
 import RemindersPage from './pages/RemindersPage';
 import OpdPage from './pages/OpdPage';
+import LabReportsPage from './pages/LabReportsPage';
 
 function Protected({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: ('Owner' | 'Manager' | 'Staff')[] }) {
   return (
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
             <Route path="/billing" element={<Protected><BillingPage /></Protected>} />
             <Route path="/opd" element={<Protected><OpdPage /></Protected>} />
+            <Route path="/lab-reports" element={<Protected><LabReportsPage /></Protected>} />
             <Route path="/medicines" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><MedicinesPage /></Protected>} />
             <Route path="/reminders" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><RemindersPage /></Protected>} />
             <Route path="/categories" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><CategoriesPage /></Protected>} />
