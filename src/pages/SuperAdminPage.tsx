@@ -21,15 +21,17 @@ import { formatCurrency } from '../utils/currency';
 export default function SuperAdminPage() {
   const { profile } = useAuth();
 
-  if (!profile?.is_platform_admin) {
-  return (
-    <div className="py-16 text-center max-w-md mx-auto space-y-4">
-      <ShieldAlert className="h-12 w-12 text-red-500 mx-auto bg-red-50 p-2.5 rounded-full" />
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Restricted Area</h2>
-      <p className="text-xs text-gray-500">This is a platform-owner view. Your account doesn't have admin access.</p>
-    </div>
-  );
-}
+  const hasAdminAccess = profile?.is_platform_admin || profile?.role === 'Owner';
+
+  if (!hasAdminAccess) {
+    return (
+      <div className="py-16 text-center max-w-md mx-auto space-y-4">
+        <ShieldAlert className="h-12 w-12 text-red-500 mx-auto bg-red-50 p-2.5 rounded-full" />
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Restricted Area</h2>
+        <p className="text-xs text-gray-500">This is an admin view. Your account doesn't have admin access.</p>
+      </div>
+    );
+  }
   // DB States
   const [users, setUsers] = useState<User[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
