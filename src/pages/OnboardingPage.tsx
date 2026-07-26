@@ -144,25 +144,36 @@ const onSubmit = async (data: OnboardingFormValues) => {
   try {
     const newPharmacyId = crypto.randomUUID();
 
-    // 1. Create the pharmacy row — no .select() this time
+    const pharmacyPayload = {
+      id: newPharmacyId,
+      name: data.name,
+      owner_name: data.ownerName,
+      license_number: data.licenseNumber,
+      gst: data.gst,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      state: data.state,
+      district: data.district,
+      city: data.city,
+      pincode: data.pincode,
+    };
+
+    // 1. Create the pharmacy row in Supabase
     const { error: pharmacyError } = await supabase
       .from('pharmacies')
-      .insert({
-        id: newPharmacyId,
-        name: data.name,
-        owner_name: data.ownerName,
-        license_number: data.licenseNumber,
-        gst: data.gst,
-        phone: data.phone,
-        email: data.email,
-        address: data.address,
-        state: data.state,
-        district: data.district,
-        city: data.city,
-        pincode: data.pincode,
-      });
+      .insert(pharmacyPayload);
 
     if (pharmacyError) throw pharmacyError;
+
+    // 2. Notify Admin Portal Serverless API directly
+    try {
+      await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pharmacyPayload)
+      });
+    } catch (e) {}
 
     // 2. Link the current user's profile to the new pharmacy
     const { error: profileError } = await supabase
