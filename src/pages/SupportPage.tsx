@@ -47,12 +47,10 @@ const syncTickets = async () => {
     syncTickets();
   }, []);
 
-// NEW: re-run syncTickets whenever any support ticket or reply changes,
-// so a platform admin's reply shows up here live.
-useRealtimeTable('support_tickets', syncTickets);
-useRealtimeTable('ticket_replies', syncTickets);
+  useRealtimeTable('support_tickets', syncTickets);
+  useRealtimeTable('ticket_replies', syncTickets);
 
- const handleRaiseTicket = async (e: React.FormEvent) => {
+const handleRaiseTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tktTitle.trim() || !tktDesc.trim() || !profile?.pharmacy_id) return;
 

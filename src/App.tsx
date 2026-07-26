@@ -76,7 +76,7 @@ export default function App() {
             <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
             <Route path="/exchange" element={<Protected><ExchangePage /></Protected>} />
             <Route path="/recovery" element={<Protected><RecoveryPage /></Protected>} />
-            <Route path="/admin" element={<Protected><PlatformAdminRoute><SuperAdminPage /></PlatformAdminRoute></Protected>} />
+            <Route path="/ops-console-7f3k2x" element={<Protected><PlatformAdminRoute><SuperAdminPage /></PlatformAdminRoute></Protected>} />
             <Route path="/support" element={<Protected><SupportPage /></Protected>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />

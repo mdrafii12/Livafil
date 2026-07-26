@@ -17,6 +17,7 @@ import {
   SubscriptionPlan, SubscriptionStatus 
 } from '../types';
 import { formatCurrency } from '../utils/currency';
+import { supabase } from '../lib/supabaseClient';
 import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 export default function SuperAdminPage() {
@@ -50,17 +51,22 @@ export default function SuperAdminPage() {
   const [pharmacySearch, setPharmacySearch] = useState<string>('');
 
   // Fetch / Sync DB Data
-const syncDB = async () => {
+  const syncDB = async () => {
     try {
-      const [allPharmacies, allUsers, allTickets] = await Promise.all([
-        db.getAllPharmacies(),
-        db.getAllTeamMembersAdmin(),
-        db.getAllSupportTicketsAdmin(),
-      ]);
-      setPharmacies(allPharmacies);
-      setUsers(allUsers);
-      setTickets(allTickets);
-      // Feature flags and audit logs aren't wired to real tables yet — stay empty/local for now.
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/data', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const json = await res.json();
+
+      if (json.status !== 'success') {
+        console.error('Admin data fetch failed:', json.message);
+        return;
+      }
+
+      setPharmacies(json.pharmacies);
+      setUsers(json.profiles.filter((p: any) => p.pharmacy_id));
+      setTickets(json.tickets);
       setFeatureFlags([]);
       setAuditLogs([]);
     } catch (err) {
@@ -72,11 +78,9 @@ const syncDB = async () => {
     syncDB();
   }, []);
 
-
-// ...inside SuperAdminPage component, after the initial syncDB() effect:
-useRealtimeTable('pharmacies', syncDB);
-useRealtimeTable('support_tickets', syncDB);
-useRealtimeTable('profiles', syncDB);
+  useRealtimeTable('pharmacies', syncDB);
+  useRealtimeTable('support_tickets', syncDB);
+  useRealtimeTable('profiles', syncDB);
 
   // System Stats Calculations
   const mrr = 149 * 2 + 49 * 1; // 2 Pros (₹149) and 1 Starter (₹49) as a simulation
