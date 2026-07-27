@@ -1040,7 +1040,7 @@ export async function getTeamMembers(): Promise<any[]> {
   return data ?? [];
 }
 
-export async function updateStaffRole(profileId: string, role: 'Owner' | 'Manager' | 'Staff'): Promise<void> {
+export async function updateStaffRole(profileId: string, role: import('../types').UserRole): Promise<void> {
   const { error } = await supabase.from('profiles').update({ role }).eq('id', profileId);
   if (error) throw error;
 }
@@ -1076,7 +1076,7 @@ export async function getPendingInvites(): Promise<StaffInvite[]> {
   return (data ?? []).map(mapInvite);
 }
 
-export async function inviteStaffMember(pharmacyId: string, pharmacyName: string, name: string, email: string, role: 'Owner' | 'Manager' | 'Staff'): Promise<void> {
+export async function inviteStaffMember(pharmacyId: string, pharmacyName: string, name: string, email: string, role: import('../types').UserRole): Promise<void> {
   const { error } = await supabase.from('staff_invites').insert({
     pharmacy_id: pharmacyId,
     pharmacy_name: pharmacyName,
@@ -1105,7 +1105,7 @@ export async function checkMyInvite(email: string): Promise<StaffInvite | null> 
   return data ? mapInvite(data) : null;
 }
 
-export async function acceptInvite(inviteId: string, profileId: string, pharmacyId: string, role: 'Owner' | 'Manager' | 'Staff'): Promise<void> {
+export async function acceptInvite(inviteId: string, profileId: string, pharmacyId: string, role: import('../types').UserRole): Promise<void> {
   const { error: profileError } = await supabase
     .from('profiles')
     .update({ pharmacy_id: pharmacyId, role })

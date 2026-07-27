@@ -1,10 +1,12 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types';
+import AccessRestricted from './AccessRestricted';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('Owner' | 'Manager' | 'Staff')[];
+  allowedRoles?: UserRole[];
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -13,7 +15,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
-        Loading...
+        Loading Livafil Workspace...
       </div>
     );
   }
@@ -26,8 +28,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles && profile?.role && !allowedRoles.includes(profile.role)) {
+    return <AccessRestricted />;
   }
 
   return <>{children}</>;

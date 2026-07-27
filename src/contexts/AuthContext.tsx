@@ -7,7 +7,7 @@ export interface Profile {
   pharmacy_id: string | null;
   email: string;
   name: string;
-  role: 'Owner' | 'Manager' | 'Staff';
+  role: 'Owner' | 'Manager' | 'Staff' | 'OP Staff';
   status: 'Active' | 'Inactive' | 'Pending';
   avatar_url?: string | null;
   is_platform_admin?: boolean;

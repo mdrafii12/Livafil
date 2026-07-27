@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   Plus, Search, Filter, Download, Upload, Edit3, Trash2, 
-  X, Check, AlertCircle, Loader2, Eye, ShieldAlert, FileText, CheckCircle
+  X, Check, AlertCircle, Loader2, Eye, ShieldAlert, FileText, CheckCircle, Sparkles
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { useAuth } from '../contexts/AuthContext';
@@ -71,6 +71,124 @@ export default function MedicinesPage() {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  // AI Invoice Import States
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isSavingAiItems, setIsSavingAiItems] = useState(false);
+  const [aiReviewRows, setAiReviewRows] = useState<{
+    id: string;
+    name: string;
+    genericName: string;
+    manufacturer: string;
+    strength: string;
+    dosageForm: string;
+    barcode: string;
+    prescriptionRequired: boolean;
+    confidence: 'High' | 'Low';
+  }[]>([]);
+
+  const handleSimulateAiExtraction = () => {
+    setIsExtracting(true);
+    setTimeout(() => {
+      setAiReviewRows([
+        {
+          id: '1',
+          name: 'Paracetamol 500mg',
+          genericName: 'Acetaminophen',
+          manufacturer: 'Cipla Healthcare',
+          strength: '500 mg',
+          dosageForm: 'Tablet',
+          barcode: '8901086001234',
+          prescriptionRequired: false,
+          confidence: 'High',
+        },
+        {
+          id: '2',
+          name: 'Amoxicillin 250mg',
+          genericName: 'Amoxicillin Trihydrate',
+          manufacturer: 'Sun Pharma',
+          strength: '250 mg',
+          dosageForm: 'Capsule',
+          barcode: '8901086005678',
+          prescriptionRequired: true,
+          confidence: 'High',
+        },
+        {
+          id: '3',
+          name: 'Azithromycin 500',
+          genericName: 'Azithromycin',
+          manufacturer: 'Mankind Pharma',
+          strength: '500 mg',
+          dosageForm: 'Tablet',
+          barcode: '8901086009999',
+          prescriptionRequired: true,
+          confidence: 'Low', // Mocked low confidence to trigger "Please verify" badge
+        },
+      ]);
+      setIsExtracting(false);
+    }, 1000);
+  };
+
+  const handleUpdateAiRow = (id: string, field: string, value: any) => {
+    setAiReviewRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  const handleDeleteAiRow = (id: string) => {
+    setAiReviewRows(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleAddAiRow = () => {
+    setAiReviewRows(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        name: 'New Medicine',
+        genericName: '',
+        manufacturer: '',
+        strength: '500 mg',
+        dosageForm: 'Tablet',
+        barcode: '',
+        prescriptionRequired: false,
+        confidence: 'High',
+      }
+    ]);
+  };
+
+  const handleSaveReviewedAiMedicines = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.pharmacy_id || aiReviewRows.length === 0) return;
+
+    setIsSavingAiItems(true);
+    try {
+      let successCount = 0;
+      // REUSE the existing CSV save function loop (db.addMedicine)
+      for (const row of aiReviewRows) {
+        if (!row.name.trim()) continue;
+        // TODO: SUPABASE - bulk insert reviewed medicines into inventory table
+        await db.addMedicine(profile.pharmacy_id, {
+          name: row.name,
+          genericName: row.genericName,
+          manufacturer: row.manufacturer,
+          strength: row.strength,
+          dosageForm: row.dosageForm,
+          barcode: row.barcode,
+          categoryId: '',
+          prescriptionRequired: row.prescriptionRequired,
+        });
+        successCount++;
+      }
+
+      showNotification('success', `Saved ${successCount} reviewed medicines into catalog successfully.`);
+      await refreshData();
+      setAiModalOpen(false);
+      setAiReviewRows([]);
+    } catch (err: any) {
+      showNotification('error', err.message || 'Failed to save reviewed medicines.');
+    } finally {
+      setIsSavingAiItems(false);
+    }
+  };
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<MedicineFormValues>({
     resolver: zodResolver(medicineSchema) as any,
@@ -322,6 +440,13 @@ export default function MedicinesPage() {
           <p className="text-sm text-gray-500">Manage drug catalog entries, dosage forms, and classifications.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setAiModalOpen(true)}
+            className="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-xs"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI Invoice Import</span>
+          </button>
           <button 
             onClick={() => setImportOpen(true)}
             className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors"
@@ -831,6 +956,210 @@ export default function MedicinesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* AI INVOICE EXTRACTION & EDITABLE REVIEW TABLE MODAL */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-slideIn">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gradient-to-r from-purple-50/50 via-indigo-50/50 to-transparent dark:from-purple-950/20 dark:via-indigo-950/20">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-purple-600 text-white rounded-xl shadow-xs">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-gray-900 dark:text-white text-base">
+                    AI Invoice & Bill Extraction
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Extract drug catalog items from supplier bills. Review and edit all fields before saving.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setAiModalOpen(false)} 
+                className="p-1.5 rounded-xl text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+              
+              {/* ACTION TOOLBAR & MOCK SIMULATOR */}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <p className="text-xs font-bold text-gray-900 dark:text-white">Upload Supplier Invoice Image / PDF</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Mock mode active — test extraction workflow before wiring live vision API.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSimulateAiExtraction}
+                  disabled={isExtracting}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-xs transition-all disabled:opacity-50 shrink-0"
+                >
+                  {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  <span>{isExtracting ? 'Extracting Data...' : 'Simulate AI Extraction'}</span>
+                </button>
+              </div>
+
+              {/* EDITABLE REVIEW TABLE */}
+              {aiReviewRows.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Extracted Items Review ({aiReviewRows.length})
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddAiRow}
+                      className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-xs font-bold text-gray-700 dark:text-gray-200 rounded-lg flex items-center space-x-1"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Row</span>
+                    </button>
+                  </div>
+
+                  <div className="border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                            <th className="py-3 px-3 min-w-[150px]">Medicine Name</th>
+                            <th className="py-3 px-3 min-w-[130px]">Generic Name</th>
+                            <th className="py-3 px-3 min-w-[130px]">Manufacturer</th>
+                            <th className="py-3 px-3 w-24">Strength</th>
+                            <th className="py-3 px-3 w-28">Form</th>
+                            <th className="py-3 px-3 w-32">Barcode</th>
+                            <th className="py-3 px-3 w-16 text-center">Rx?</th>
+                            <th className="py-3 px-3 w-28">Confidence</th>
+                            <th className="py-3 px-3 w-12 text-right">Delete</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800 text-xs">
+                          {aiReviewRows.map((row) => (
+                            <tr key={row.id} className="hover:bg-purple-50/20 dark:hover:bg-purple-950/10">
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.name}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'name', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white font-medium focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.genericName}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'genericName', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.manufacturer}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'manufacturer', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.strength}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'strength', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.dosageForm}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'dosageForm', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.barcode}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'barcode', e.target.value)}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white font-mono focus:border-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={row.prescriptionRequired}
+                                  onChange={(e) => handleUpdateAiRow(row.id, 'prescriptionRequired', e.target.checked)}
+                                  className="h-4 w-4 rounded text-purple-600 focus:ring-purple-500"
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                {row.confidence === 'Low' ? (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/50 text-[10px] font-bold rounded-full">
+                                    <AlertCircle className="w-3 h-3 text-amber-500" />
+                                    <span>Please verify</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 text-[10px] font-bold rounded-full">
+                                    <CheckCircle className="w-3 h-3" />
+                                    <span>Verified</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAiRow(row.id)}
+                                  className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  title="Delete item"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setAiModalOpen(false)}
+                      className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50"
+                    >
+                      Discard Review
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveReviewedAiMedicines}
+                      disabled={isSavingAiItems}
+                      className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs"
+                    >
+                      {isSavingAiItems && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      <span>Confirm & Save All</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-gray-400 space-y-2 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+                  <Sparkles className="h-8 w-8 text-purple-400 mx-auto" />
+                  <p className="text-xs font-semibold">No items extracted yet</p>
+                  <p className="text-[11px] text-gray-400 max-w-sm mx-auto">
+                    Click "Simulate AI Extraction" above to load extracted bill rows into the review table.
+                  </p>
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
       )}

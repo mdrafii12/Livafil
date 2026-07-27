@@ -100,10 +100,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = [
     { name: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'billing', label: 'Quick Billing', path: '/billing', icon: Receipt, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'opd', label: 'Out-Patient (OPD)', path: '/opd', icon: Stethoscope, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'labReports', label: 'Lab & Diagnostics', path: '/lab-reports', icon: FlaskConical, roles: ['Owner', 'Manager', 'Staff'] },
-    { name: 'refillReminders', label: 'Refill Reminders', path: '/reminders', icon: AlarmClock, roles: ['Owner', 'Manager', 'Staff'] },
+    { name: 'billing', label: 'Quick Billing', path: '/billing', icon: Receipt, roles: ['Owner', 'Manager', 'Staff', 'OP Staff'] },
+    { name: 'opd', label: 'Out-Patient (OPD)', path: '/opd', icon: Stethoscope, roles: ['Owner', 'Manager', 'Staff', 'OP Staff'] },
+    { name: 'labReports', label: 'Lab & Diagnostics', path: '/lab-reports', icon: FlaskConical, roles: ['Owner', 'Manager', 'Staff', 'OP Staff'] },
+    { name: 'refillReminders', label: 'Refill Reminders', path: '/reminders', icon: AlarmClock, roles: ['Owner', 'Manager', 'Staff', 'OP Staff'] },
     { name: 'medicines', label: 'Medicines', path: '/medicines', icon: Pill, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'categories', label: 'Categories', path: '/categories', icon: Tags, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'suppliers', label: 'Suppliers', path: '/suppliers', icon: Truck, roles: ['Owner', 'Manager', 'Staff'] },
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'reports', label: 'Reports Audit', path: '/reports', icon: BarChart4, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'exchange', label: 'Livafil Exchange', path: '/exchange', icon: ArrowLeftRight, roles: ['Owner', 'Manager', 'Staff'] },
     { name: 'users', label: 'Staff Management', path: '/users', icon: Users, roles: ['Owner', 'Manager'] },
-    { name: 'support', label: 'Support Hub', path: '/support', icon: HelpCircle, roles: ['Owner', 'Manager', 'Staff'] },
+    { name: 'support', label: 'Support Hub', path: '/support', icon: HelpCircle, roles: ['Owner', 'Manager', 'Staff', 'OP Staff'] },
     { name: 'settings', label: 'Settings', path: '/settings', icon: Settings, roles: ['Owner', 'Manager', 'Staff'] },
   ];
 

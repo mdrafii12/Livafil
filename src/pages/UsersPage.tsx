@@ -12,7 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 const inviteSchema = z.object({
   name: z.string().min(2, 'Full name is required'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  role: z.enum(['Owner', 'Manager', 'Staff']),
+  role: z.enum(['Owner', 'Manager', 'Staff', 'OP Staff']),
 });
 
 type InviteFormValues = z.infer<typeof inviteSchema>;
@@ -65,6 +65,7 @@ export default function UsersPage() {
       // profile doesn't carry it directly, so pull it fresh.
       const pharmacy = await db.getMyPharmacy(profile.pharmacy_id);
 
+      // TODO: SUPABASE - insert staff_invites record with role field, send invite link
       await db.inviteStaffMember(profile.pharmacy_id, pharmacy.name, data.name, data.email, data.role);
 
       await refreshData();
@@ -194,6 +195,7 @@ export default function UsersPage() {
                           <option value="Owner">Owner (Full root access)</option>
                           <option value="Manager">Manager (Audits and stock CRUD)</option>
                           <option value="Staff">Staff (Inventory count edits)</option>
+                          <option value="OP Staff">OP Staff (Dispensing & Billing Only)</option>
                         </select>
                       )}
                     </td>
@@ -299,6 +301,7 @@ export default function UsersPage() {
                   className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-white"
                 >
                   <option value="Staff">Staff (Perform shelf audits and logs)</option>
+                  <option value="OP Staff">OP Staff (Dispensing & Billing Only)</option>
                   <option value="Manager">Manager (Edit medicines, view reports, change staff)</option>
                   <option value="Owner">Owner (Root access to settings and keys)</option>
                 </select>

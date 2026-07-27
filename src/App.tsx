@@ -35,7 +35,9 @@ import OpdPage from './pages/OpdPage';
 import LabReportsPage from './pages/LabReportsPage';  
 import PlatformAdminRoute from './components/PlatformAdminRoute';
 
-function Protected({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: ('Owner' | 'Manager' | 'Staff')[] }) {
+import { UserRole } from './types';
+
+function Protected({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: UserRole[] }) {
   return (
     <ProtectedRoute allowedRoles={allowedRoles}>
       <DashboardLayout>{children}</DashboardLayout>
@@ -61,23 +63,23 @@ export default function App() {
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
 
-            <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
-            <Route path="/billing" element={<Protected><BillingPage /></Protected>} />
-            <Route path="/opd" element={<Protected><OpdPage /></Protected>} />
-            <Route path="/lab-reports" element={<Protected><LabReportsPage /></Protected>} />
+            <Route path="/dashboard" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><DashboardPage /></Protected>} />
+            <Route path="/billing" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff', 'OP Staff']}><BillingPage /></Protected>} />
+            <Route path="/opd" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff', 'OP Staff']}><OpdPage /></Protected>} />
+            <Route path="/lab-reports" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff', 'OP Staff']}><LabReportsPage /></Protected>} />
+            <Route path="/reminders" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff', 'OP Staff']}><RemindersPage /></Protected>} />
             <Route path="/medicines" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><MedicinesPage /></Protected>} />
-            <Route path="/reminders" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><RemindersPage /></Protected>} />
             <Route path="/categories" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><CategoriesPage /></Protected>} />
-            <Route path="/suppliers" element={<Protected><SuppliersPage /></Protected>} />
-            <Route path="/batches" element={<Protected><BatchesPage /></Protected>} />
-            <Route path="/movements" element={<Protected><MovementsPage /></Protected>} />
-            <Route path="/reports" element={<Protected><ReportsPage /></Protected>} />
+            <Route path="/suppliers" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><SuppliersPage /></Protected>} />
+            <Route path="/batches" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><BatchesPage /></Protected>} />
+            <Route path="/movements" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><MovementsPage /></Protected>} />
+            <Route path="/reports" element={<Protected allowedRoles={['Owner', 'Manager']}><ReportsPage /></Protected>} />
             <Route path="/users" element={<Protected allowedRoles={['Owner', 'Manager']}><UsersPage /></Protected>} />
-            <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
-            <Route path="/exchange" element={<Protected><ExchangePage /></Protected>} />
-            <Route path="/recovery" element={<Protected><RecoveryPage /></Protected>} />
+            <Route path="/settings" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><SettingsPage /></Protected>} />
+            <Route path="/exchange" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><ExchangePage /></Protected>} />
+            <Route path="/recovery" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff']}><RecoveryPage /></Protected>} />
             <Route path="/ops-console-7f3k2x" element={<Protected><PlatformAdminRoute><SuperAdminPage /></PlatformAdminRoute></Protected>} />
-            <Route path="/support" element={<Protected><SupportPage /></Protected>} />
+            <Route path="/support" element={<Protected allowedRoles={['Owner', 'Manager', 'Staff', 'OP Staff']}><SupportPage /></Protected>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
