@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { useAuth } from '../contexts/AuthContext';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 import { IntelligenceService } from '../services/intelligence';
 import { 
   ExchangeListing, NeedMedicine, ExchangeRequest, ExchangeActivity,
@@ -132,6 +133,11 @@ export default function ExchangePage() {
       loadData();
     }
   }, [profile?.pharmacy_id]);
+
+  // Realtime Subscriptions for inter-pharmacy marketplace updates
+  useRealtimeTable('exchange_listings', loadData);
+  useRealtimeTable('need_medicines', loadData);
+  useRealtimeTable('exchange_requests', loadData);
 
   const triggerAlert = (type: 'success' | 'error' | 'info', message: string) => {
     setAlert({ type, message });

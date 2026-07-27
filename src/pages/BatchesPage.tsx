@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   Plus, Search, Edit3, Trash2, X, Check, Loader2, Calendar, 
-  Boxes, AlertCircle, Info, RefreshCw, Layers, DollarSign 
+  Boxes, AlertCircle, Info, RefreshCw, Layers, DollarSign, ArrowLeftRight, MessageSquare
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { useAuth } from '../contexts/AuthContext';
 import { Batch, Medicine, Supplier, BatchStatus } from '../types';
 import { formatCurrency } from '../utils/currency';
+import { sendWhatsAppMessage } from '../services/whatsapp';
 
 const batchSchema = z.object({
   medicineId: z.string().min(1, 'Please select a medicine'),
@@ -42,6 +43,28 @@ export default function BatchesPage() {
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Exchange Listing Modal State
+  const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
+  const [selectedBatchForExchange, setSelectedBatchForExchange] = useState<Batch | null>(null);
+  const [exchangeForm, setExchangeForm] = useState({
+    sellingPrice: 0,
+    discountPercentage: 20,
+    minimumOrder: 5,
+    reason: 'Near Expiry' as 'Near Expiry' | 'Overstock' | 'Slow Moving' | 'Other',
+    notes: '',
+  });
+  const [isSubmittingExchange, setIsSubmittingExchange] = useState(false);
+
+  // Reorder Modal State
+  const [reorderModalOpen, setReorderModalOpen] = useState(false);
+  const [selectedBatchForReorder, setSelectedBatchForReorder] = useState<Batch | null>(null);
+  const [reorderForm, setReorderForm] = useState({
+    supplierId: '',
+    quantity: 10,
+    notes: '',
+  });
+  const [isSubmittingReorder, setIsSubmittingReorder] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -49,6 +72,109 @@ export default function BatchesPage() {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<BatchFormValues>({
     resolver: zodResolver(batchSchema),
   });
+
+  const handleOpenExchangeModal = (b: Batch) => {
+    setSelectedBatchForExchange(b);
+    const calculatedDiscount = b.mrp > 0 ? Math.max(10, Math.round(((b.mrp - b.sellingPrice) / b.mrp) * 100)) : 20;
+    setExchangeForm({
+      sellingPrice: b.sellingPrice > 0 ? b.sellingPrice : Math.round(b.purchasePrice * 1.1),
+      discountPercentage: calculatedDiscount,
+      minimumOrder: Math.min(10, b.quantity),
+      reason: 'Near Expiry',
+      notes: `Batch ${b.batchNumber} expiring on ${b.expiryDate}. Listed directly from inventory.`,
+    });
+    setExchangeModalOpen(true);
+  };
+
+  const handleSubmitExchange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBatchForExchange || !profile?.pharmacy_id) return;
+    const med = medicines.find(m => m.id === selectedBatchForExchange.medicineId);
+    if (!med) return;
+
+    setIsSubmittingExchange(true);
+    try {
+      const myPharm = await db.getMyPharmacy(profile.pharmacy_id);
+      const pharmacyName = myPharm?.name || profile.name || 'Partner Pharmacy';
+
+      await db.addExchangeListing(profile.pharmacy_id, {
+        medicineId: med.id,
+        pharmacyName,
+        medicineName: med.name,
+        genericName: med.genericName || '',
+        strength: med.strength || '',
+        manufacturer: med.manufacturer || '',
+        batchNumber: selectedBatchForExchange.batchNumber,
+        quantity: selectedBatchForExchange.quantity,
+        expiryDate: selectedBatchForExchange.expiryDate,
+        mrp: selectedBatchForExchange.mrp,
+        sellingPrice: Number(exchangeForm.sellingPrice),
+        discountPercentage: Number(exchangeForm.discountPercentage),
+        minimumOrder: Number(exchangeForm.minimumOrder),
+        reason: exchangeForm.reason,
+        notes: exchangeForm.notes,
+        status: 'Active',
+      });
+
+      alert(`Batch ${selectedBatchForExchange.batchNumber} has been listed on the Inter-Pharmacy Exchange marketplace!`);
+      setExchangeModalOpen(false);
+      await refreshData();
+    } catch (err: any) {
+      console.error('Failed to list batch on exchange:', err);
+      alert(err.message || 'Failed to create exchange listing');
+    } finally {
+      setIsSubmittingExchange(false);
+    }
+  };
+
+  const handleOpenReorderModal = (b: Batch) => {
+    setSelectedBatchForReorder(b);
+    const suggestedQty = Math.max(10, (b.minimumStock * 2) - b.quantity);
+    setReorderForm({
+      supplierId: b.supplierId || (suppliers[0]?.id ?? ''),
+      quantity: suggestedQty,
+      notes: '',
+    });
+    setReorderModalOpen(true);
+  };
+
+  const handleSubmitReorder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBatchForReorder || !profile?.pharmacy_id) return;
+    const med = medicines.find(m => m.id === selectedBatchForReorder.medicineId);
+    const sup = suppliers.find(s => s.id === reorderForm.supplierId);
+    if (!med || !sup) {
+      alert('Please ensure a valid medicine and supplier are selected.');
+      return;
+    }
+
+    setIsSubmittingReorder(true);
+    try {
+      await db.addPurchaseOrder(profile.pharmacy_id, {
+        medicineId: med.id,
+        supplierId: sup.id,
+        quantity: Number(reorderForm.quantity),
+        status: 'Sent',
+      });
+
+      const myPharm = await db.getMyPharmacy(profile.pharmacy_id);
+      const pharmacyName = myPharm?.name || 'Our Pharmacy';
+      const contactName = sup.contactPerson || sup.name;
+
+      const message = `Hi ${contactName}, we'd like to reorder ${reorderForm.quantity} units of ${med.name} ${med.strength}. Please confirm availability and pricing. — ${pharmacyName}`;
+
+      sendWhatsAppMessage(sup.phone || '', message);
+
+      alert(`Purchase order created for ${reorderForm.quantity} units of ${med.name} and WhatsApp order message opened!`);
+      setReorderModalOpen(false);
+      await refreshData();
+    } catch (err: any) {
+      console.error('Failed to create purchase order:', err);
+      alert(err.message || 'Failed to create purchase order');
+    } finally {
+      setIsSubmittingReorder(false);
+    }
+  };
 
   useEffect(() => {
     refreshData();
@@ -271,7 +397,31 @@ export default function BatchesPage() {
                         </p>
                       </td>
                       <td className="py-4 px-5 text-gray-600 truncate max-w-40">{sup ? sup.name : <span className="text-gray-300">Unlinked</span>}</td>
-                      <td className="py-4 px-5">{getStatusBadge(b.status)}</td>
+                      <td className="py-4 px-5">
+                        <div className="flex flex-col gap-1 items-start">
+                          {getStatusBadge(b.status)}
+                          {b.status === 'Expiring' && (
+                            <button
+                              onClick={() => handleOpenExchangeModal(b)}
+                              className="mt-1 px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-md text-[10px] font-bold flex items-center space-x-1 border border-amber-500/30 transition-colors"
+                              title="List on Inter-Pharmacy Exchange Marketplace"
+                            >
+                              <ArrowLeftRight className="h-3 w-3" />
+                              <span>List on Exchange</span>
+                            </button>
+                          )}
+                          {(b.quantity < b.minimumStock || b.status === 'Low Stock') && (
+                            <button
+                              onClick={() => handleOpenReorderModal(b)}
+                              className="mt-1 px-2 py-0.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-md text-[10px] font-bold flex items-center space-x-1 border border-purple-500/30 transition-colors"
+                              title="Draft purchase order & WhatsApp supplier"
+                            >
+                              <MessageSquare className="h-3 w-3" />
+                              <span>Draft Reorder</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-4 px-5 text-right space-x-1.5">
                         <button 
                           onClick={() => handleOpenEdit(b)}
@@ -499,6 +649,195 @@ export default function BatchesPage() {
                 >
                   {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   <span>{editingBatch ? 'Save Changes' : 'Record Batch'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* LIST ON EXCHANGE MODAL */}
+      {exchangeModalOpen && selectedBatchForExchange && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-slideIn">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-amber-50/50 dark:bg-amber-950/20">
+              <div className="flex items-center space-x-2">
+                <ArrowLeftRight className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-display font-bold text-gray-900 dark:text-white text-base">
+                  List Batch on Exchange
+                </h3>
+              </div>
+              <button onClick={() => setExchangeModalOpen(false)} className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitExchange} className="p-6 space-y-4">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/50 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300">
+                <p className="font-bold">
+                  {medicines.find(m => m.id === selectedBatchForExchange.medicineId)?.name} (Batch #{selectedBatchForExchange.batchNumber})
+                </p>
+                <p className="text-[11px] opacity-90 mt-0.5">
+                  Available Quantity: <strong>{selectedBatchForExchange.quantity} units</strong> • Expiring: <strong>{selectedBatchForExchange.expiryDate}</strong>
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Selling Price / Unit (₹)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={exchangeForm.sellingPrice}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, sellingPrice: parseFloat(e.target.value) || 0 })}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Discount (% Off MRP)</label>
+                  <input
+                    type="number"
+                    value={exchangeForm.discountPercentage}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, discountPercentage: parseInt(e.target.value) || 0 })}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Minimum Order Qty</label>
+                  <input
+                    type="number"
+                    value={exchangeForm.minimumOrder}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, minimumOrder: parseInt(e.target.value) || 1 })}
+                    required
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Listing Reason</label>
+                  <select
+                    value={exchangeForm.reason}
+                    onChange={(e) => setExchangeForm({ ...exchangeForm, reason: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-white"
+                  >
+                    <option value="Near Expiry">Near Expiry</option>
+                    <option value="Overstock">Overstock</option>
+                    <option value="Slow Moving">Slow Moving</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Listing Notes</label>
+                <textarea
+                  rows={2}
+                  value={exchangeForm.notes}
+                  onChange={(e) => setExchangeForm({ ...exchangeForm, notes: e.target.value })}
+                  placeholder="Additional conditions or pickup notes for buyer pharmacies..."
+                  className="w-full p-2.5 text-xs rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-gray-900 dark:text-white"
+                ></textarea>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setExchangeModalOpen(false)}
+                  className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingExchange}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs"
+                >
+                  {isSubmittingExchange && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  <span>Publish to Marketplace</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DRAFT REORDER MODAL */}
+      {reorderModalOpen && selectedBatchForReorder && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-slideIn">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-purple-50/50 dark:bg-purple-950/20">
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="font-display font-bold text-gray-900 dark:text-white text-base">
+                  Draft Low-Stock Reorder
+                </h3>
+              </div>
+              <button onClick={() => setReorderModalOpen(false)} className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReorder} className="p-6 space-y-4">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200/50 dark:border-purple-900/40 text-xs text-purple-900 dark:text-purple-300">
+                <p className="font-bold">
+                  {medicines.find(m => m.id === selectedBatchForReorder.medicineId)?.name}
+                </p>
+                <p className="text-[11px] opacity-90 mt-0.5">
+                  Current Stock: <strong>{selectedBatchForReorder.quantity} units</strong> • Minimum Limit: <strong>{selectedBatchForReorder.minimumStock} units</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Target Supplier</label>
+                <select
+                  value={reorderForm.supplierId}
+                  onChange={(e) => setReorderForm({ ...reorderForm, supplierId: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-white"
+                  required
+                >
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.phone || 'No phone'})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Reorder Quantity (Units)</label>
+                <input
+                  type="number"
+                  value={reorderForm.quantity}
+                  onChange={(e) => setReorderForm({ ...reorderForm, quantity: parseInt(e.target.value) || 1 })}
+                  required
+                  min={1}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-transparent text-xs text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-[11px] text-gray-600 dark:text-gray-400 space-y-1">
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Action Summary:</p>
+                <p>1. Record purchase order in Livafil database as 'Sent'.</p>
+                <p>2. Open WhatsApp Web / App pre-filled with supplier order message.</p>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setReorderModalOpen(false)}
+                  className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReorder}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs"
+                >
+                  {isSubmittingReorder && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  <span>Send Order via WhatsApp</span>
                 </button>
               </div>
             </form>
