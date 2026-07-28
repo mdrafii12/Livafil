@@ -9,14 +9,15 @@ export interface SyncQueueItem {
   id: string;
   pharmacyId: string;
   type: 'bill' | 'opd_consultation';
-  status: 'pending' | 'synced' | 'needs_review';
+  status: 'pending' | 'synced' | 'needs_review' | 'failed';
   createdAt: string;
   staffId: string;
   staffName: string;
-  payload: any; // cart/patient/totals data
+  payload: any;
   requestedQuantity: number;
   availableStockAtSync?: number | null;
   conflictDetails?: string | null;
+  syncError?: string | null;
 }
 
 interface OfflineDBSchema extends DBSchema {
@@ -75,7 +76,7 @@ export async function saveMedicinesCache(
   try {
     const db = await getDB();
     await db.put('medicines_cache', {
-      pharmacyId,
+      pharmacyId: pharmacyId || 'default-pharmacy',
       timestamp: Date.now(),
       data,
     });
@@ -90,7 +91,12 @@ export async function getMedicinesCache(pharmacyId: string): Promise<{
 } | null> {
   try {
     const db = await getDB();
-    const entry = await db.get('medicines_cache', pharmacyId);
+    const targetId = pharmacyId || 'default-pharmacy';
+    let entry = await db.get('medicines_cache', targetId);
+    if (!entry) {
+      // Fallback lookup for default-pharmacy
+      entry = await db.get('medicines_cache', 'default-pharmacy');
+    }
     if (!entry) return null;
     return {
       timestamp: entry.timestamp,
@@ -112,7 +118,7 @@ export async function deductLocalBatchStock(
     if (!cache || !cache.data) return;
 
     const updatedBatches = cache.data.batches.map((b: any) => {
-      if (b.id === batchId) {
+      if (b.id === batchId || (b.batchNumber && b.batchNumber === batchId)) {
         const newQty = Math.max(0, b.quantity - quantityToDeduct);
         return { ...b, quantity: newQty };
       }
@@ -133,7 +139,12 @@ export async function deductLocalBatchStock(
 export async function enqueueSyncItem(item: SyncQueueItem): Promise<void> {
   try {
     const db = await getDB();
-    await db.put('sync_queue', item);
+    const itemToStore = {
+      ...item,
+      pharmacyId: item.pharmacyId || 'default-pharmacy'
+    };
+    await db.put('sync_queue', itemToStore);
+    console.log('[OFFLINE DB] Enqueued sync item into IndexedDB:', itemToStore.id, itemToStore.type);
   } catch (err) {
     console.warn('Failed to enqueue sync item in IndexedDB:', err);
   }
@@ -143,8 +154,8 @@ export async function getAllSyncQueue(pharmacyId?: string): Promise<SyncQueueIte
   try {
     const db = await getDB();
     const items = await db.getAll('sync_queue');
-    if (pharmacyId) {
-      return items.filter((i) => i.pharmacyId === pharmacyId);
+    if (pharmacyId && pharmacyId !== 'default-pharmacy') {
+      return items.filter((i) => i.pharmacyId === pharmacyId || i.pharmacyId === 'default-pharmacy' || !i.pharmacyId);
     }
     return items;
   } catch (err) {
@@ -155,7 +166,7 @@ export async function getAllSyncQueue(pharmacyId?: string): Promise<SyncQueueIte
 
 export async function getPendingSyncQueue(pharmacyId?: string): Promise<SyncQueueItem[]> {
   const all = await getAllSyncQueue(pharmacyId);
-  return all.filter((i) => i.status === 'pending');
+  return all.filter((i) => i.status === 'pending' || i.status === 'failed');
 }
 
 export async function getConflictSyncQueue(pharmacyId?: string): Promise<SyncQueueItem[]> {
@@ -165,7 +176,7 @@ export async function getConflictSyncQueue(pharmacyId?: string): Promise<SyncQue
 
 export async function updateSyncItemStatus(
   id: string,
-  status: 'pending' | 'synced' | 'needs_review',
+  status: 'pending' | 'synced' | 'needs_review' | 'failed',
   availableStockAtSync?: number | null,
   conflictDetails?: string | null
 ): Promise<void> {
@@ -177,6 +188,7 @@ export async function updateSyncItemStatus(
       if (availableStockAtSync !== undefined) item.availableStockAtSync = availableStockAtSync;
       if (conflictDetails !== undefined) item.conflictDetails = conflictDetails;
       await db.put('sync_queue', item);
+      console.log(`[OFFLINE DB] Updated sync item ${id} status to '${status}' in IndexedDB.`);
     }
   } catch (err) {
     console.warn('Failed to update sync item status in IndexedDB:', err);
@@ -187,6 +199,7 @@ export async function removeSyncItem(id: string): Promise<void> {
   try {
     const db = await getDB();
     await db.delete('sync_queue', id);
+    console.log(`[OFFLINE DB] Confirmed deletion of item ${id} from IndexedDB sync_queue.`);
   } catch (err) {
     console.warn('Failed to remove sync item from IndexedDB:', err);
   }

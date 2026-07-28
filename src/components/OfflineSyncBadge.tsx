@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { getPendingSyncQueue, getConflictSyncQueue } from '../services/offlineDBService';
 import { processSyncQueue } from '../services/offlineSyncEngine';
@@ -14,11 +14,12 @@ export default function OfflineSyncBadge() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
+  const targetPharmacyId = profile?.pharmacy_id || 'default-pharmacy';
+
   const refreshCounts = async () => {
-    if (!profile?.pharmacy_id) return;
     try {
-      const pending = await getPendingSyncQueue(profile.pharmacy_id);
-      const conflicts = await getConflictSyncQueue(profile.pharmacy_id);
+      const pending = await getPendingSyncQueue(targetPharmacyId);
+      const conflicts = await getConflictSyncQueue(targetPharmacyId);
       setPendingCount(pending.length);
       setConflictCount(conflicts.length);
     } catch (err) {
@@ -28,29 +29,28 @@ export default function OfflineSyncBadge() {
 
   useEffect(() => {
     refreshCounts();
-    const interval = setInterval(refreshCounts, 3000);
+    const interval = setInterval(refreshCounts, 2500);
     return () => clearInterval(interval);
-  }, [profile?.pharmacy_id]);
+  }, [targetPharmacyId]);
 
   // Auto-sync when coming online
   useEffect(() => {
-    if (isOnline && profile?.pharmacy_id) {
+    if (isOnline) {
       handleAutoSync();
     }
-  }, [isOnline, profile?.pharmacy_id]);
+  }, [isOnline, targetPharmacyId]);
 
   const handleAutoSync = async () => {
     if (!isOnline || isSyncing) return;
     setIsSyncing(true);
     try {
-      await processSyncQueue(profile?.pharmacy_id);
+      console.log('[OFFLINE SYNC BADGE] Online status detected. Triggering auto-sync...');
+      await processSyncQueue(targetPharmacyId);
       await refreshCounts();
     } finally {
       setTimeout(() => setIsSyncing(false), 800);
     }
   };
-
-  const isAdmin = profile?.role === 'Owner' || profile?.role === 'Manager';
 
   return (
     <>
@@ -75,7 +75,7 @@ export default function OfflineSyncBadge() {
               </button>
             )}
 
-            {conflictCount > 0 && isAdmin && (
+            {conflictCount > 0 && (
               <button
                 onClick={() => setModalOpen(true)}
                 className="ml-1.5 px-2 py-0.5 bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800 rounded-full text-[10px] font-extrabold flex items-center gap-1 cursor-pointer animate-pulse"
@@ -99,17 +99,15 @@ export default function OfflineSyncBadge() {
         )}
       </div>
 
-      {profile?.pharmacy_id && (
-        <SyncIssuesModal
-          pharmacyId={profile.pharmacy_id}
-          isOpen={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            refreshCounts();
-          }}
-          onQueueUpdated={refreshCounts}
-        />
-      )}
+      <SyncIssuesModal
+        pharmacyId={targetPharmacyId}
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          refreshCounts();
+        }}
+        onQueueUpdated={refreshCounts}
+      />
     </>
   );
 }
