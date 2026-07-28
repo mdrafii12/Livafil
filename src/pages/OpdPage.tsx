@@ -299,7 +299,7 @@ export default function OpdPage() {
   };
 
   // 4. PDF Generation & Printing
-  const generateOpdPdf = (
+  const generateOpdPdf = async (
     c: {
       uhid: string;
       patientName: string;
@@ -318,26 +318,39 @@ export default function OpdPage() {
   ) => {
     try {
       const doc = new jsPDF();
+      let pharm = myPharmacy;
+      if (!pharm && profile?.pharmacy_id) {
+        pharm = await db.getMyPharmacy(profile.pharmacy_id).catch(() => null);
+      }
 
       // Clinic Header Banner
       doc.setFillColor(30, 41, 59);
       doc.rect(0, 0, 210, 36, 'F');
 
-      const clinicTitle = (myPharmacy?.name || 'LIVAFIL CLINIC & PHARMACY').toUpperCase();
+      const clinicTitle = (pharm?.name || 'OUT-PATIENT CLINIC & PHARMACY').toUpperCase();
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(15);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text(clinicTitle, 14, 14);
+      doc.text(clinicTitle, 14, 13);
 
-      const subtitle = myPharmacy?.address 
-        ? `${myPharmacy.address} • License: ${myPharmacy.licenseNumber || 'N/A'}`
-        : 'Out-Patient (OPD) e-Prescription & Case Sheet';
+      const addressParts = [pharm?.address, pharm?.city, pharm?.state, pharm?.pincode].filter(Boolean);
+      const addressStr = addressParts.length > 0 ? addressParts.join(', ') : '';
+      const detailsParts = [
+        pharm?.phone ? `Ph: ${pharm.phone}` : null,
+        pharm?.gst ? `GSTIN: ${pharm.gst}` : null,
+        pharm?.licenseNumber ? `Lic: ${pharm.licenseNumber}` : null
+      ].filter(Boolean);
+      const detailsStr = detailsParts.join(' | ');
+
+      const subtitle = addressStr 
+        ? `${addressStr}${detailsStr ? ' • ' + detailsStr : ''}`
+        : (detailsStr || 'Out-Patient (OPD) e-Prescription & Case Sheet');
 
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(subtitle, 14, 22);
-      doc.text(`Out-Patient (OPD) Case Sheet`, 14, 28);
-      doc.text(`Token: ${c.tokenNumber} | Date: ${new Date(c.createdAt || Date.now()).toLocaleDateString()}`, 196, 28, { align: 'right' });
+      doc.text(subtitle, 14, 21);
+      doc.text(`Out-Patient (OPD) Case Sheet`, 14, 27);
+      doc.text(`Token: ${c.tokenNumber} | Date: ${new Date(c.createdAt || Date.now()).toLocaleDateString('en-IN')}`, 196, 27, { align: 'right' });
 
       // Patient Info Section
       doc.setTextColor(30, 41, 59);
@@ -458,7 +471,7 @@ export default function OpdPage() {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
       doc.text(c.doctorName, 133, footerY + 22);
-      doc.text('Reg. No: MED/2026/OPD', 133, footerY + 25);
+      doc.text(`Lic No: ${pharm?.licenseNumber || 'DL/OPD/2026'}`, 133, footerY + 25);
 
       // Bottom Disclaimer
       doc.setFontSize(7);
@@ -509,7 +522,7 @@ export default function OpdPage() {
         
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-300 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> {myPharmacy?.name || 'LIVAFIL Clinic & Pharmacy Suite'}
+            <Sparkles className="w-3.5 h-3.5" /> {myPharmacy?.name || 'Out-Patient Clinic & Pharmacy Suite'}
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
             {myPharmacy?.name ? `${myPharmacy.name} - Out-Patient (OPD) System` : 'Out-Patient (OPD) System'}

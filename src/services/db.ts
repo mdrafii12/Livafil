@@ -42,7 +42,7 @@ const SEED_NOTIFICATIONS: Notification[] = [];
 
 const DEFAULT_SETTINGS: SystemSettings = {
   general: {
-    pharmacyName: 'LIVAFIL Pharmacy',
+    pharmacyName: 'City Care Pharmacy',
     timezone: 'Asia/Kolkata',
     currency: 'INR'
   },
@@ -69,12 +69,12 @@ const SEED_OWNER: User = {
 
 const SEED_PHARMACY: Pharmacy = {
   id: 'phar-1',
-  name: 'LIVAFIL Pharmacy Main Branch',
+  name: 'City Care Pharmacy & Clinic',
   ownerName: 'Mohammed Rafii',
-  licenseNumber: 'PH-2026-LIVAFIL',
+  licenseNumber: 'PH-2026-CCPC',
   gst: '36AAAAA0000A1Z5',
   phone: '+91 9876543210',
-  email: 'support@livafil.com',
+  email: 'contact@citycarepharmacy.com',
   address: 'Main Road, Commercial Center',
   state: 'Telangana',
   district: 'Hyderabad',

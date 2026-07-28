@@ -204,13 +204,19 @@ export default function LabReportsPage() {
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 28, 'F');
 
-    const hospitalName = (myPharmacy?.name || 'HOSPITAL & DIAGNOSTICS').toUpperCase();
-    const hospitalAddress = (myPharmacy?.address ? `${myPharmacy.address} | Ph: ${myPharmacy.phone || ''}` : 'NABL ACCREDITED LABORATORY SERVICES • 24x7 EMERGENCY & OPD').toUpperCase();
+    const hospitalName = (myPharmacy?.name || 'CLINICAL & PATHOLOGY DIAGNOSTICS').toUpperCase();
+    const details = [
+      myPharmacy?.address,
+      myPharmacy?.phone ? `Ph: ${myPharmacy.phone}` : null,
+      myPharmacy?.gst ? `GSTIN: ${myPharmacy.gst}` : null,
+      myPharmacy?.licenseNumber ? `Lic: ${myPharmacy.licenseNumber}` : null
+    ].filter(Boolean).join(' | ');
+    const hospitalAddress = (details || 'NABL ACCREDITED LABORATORY SERVICES').toUpperCase();
 
     doc.text(hospitalName, 14, 14);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.text(hospitalAddress, 14, 21);
 
     // Report Title Right

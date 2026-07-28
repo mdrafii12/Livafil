@@ -2428,8 +2428,8 @@ export default function BillingPage() {
               {/* Thank you note */}
               <div className="text-center pt-2 font-mono text-[9px] text-slate-400">
                 <p>--- THANK YOU ---</p>
-                <p className="mt-0.5">Drugs dispensed are non-refundable without valid audit checks.</p>
-                <p className="mt-1 font-sans text-[8px] text-emerald-600">Prescription sync powered by Livafil Intelligence</p>
+                <p className="mt-0.5">Drugs dispensed are non-refundable without valid receipt.</p>
+                <p className="mt-1 font-sans text-[8px] text-slate-400">Computer Generated Tax Invoice</p>
               </div>
 
             </div>

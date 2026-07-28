@@ -228,7 +228,7 @@ export default function ReportsPage() {
       return;
     }
     
-    const pharmacyName = myPharmacy?.name || 'LIVAFIL Pharmacy';
+    const pharmacyName = myPharmacy?.name || 'Pharmacy';
     
     // Generate text message for WhatsApp
     const message = `*PURCHASE ORDER*\nFrom: ${pharmacyName}\n\nHi ${r.supplierName},\nPlease arrange the following order:\n\n*Medicine:* ${r.medicineName}\n*Quantity Required:* ${r.recommendedReorderQty} units\n\nPlease confirm availability and delivery time.\n\nThanks,\n${pharmacyName}`;
@@ -315,7 +315,7 @@ export default function ReportsPage() {
  const handleExportPDF = () => {
     const pharma = myPharmacy;
     let text = `========================================================\n`;
-    text += `             LIVAFIL PHARMACY LOSS AUDIT SHEET\n`;
+    text += `             ${(pharma?.name || 'PHARMACY').toUpperCase()} LOSS AUDIT SHEET\n`;
     text += `========================================================\n`;
     text += `Pharmacy: ${pharma?.name || 'Pharmacy Audit'}\n`;
     text += `GSTIN: ${pharma?.gst || 'N/A'}\n`;
