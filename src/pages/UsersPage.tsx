@@ -4,10 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   Users, UserPlus, Shield, Key, Mail, CheckCircle2, 
-  Trash2, X, Plus, AlertCircle, Loader2, Edit3, Clock
+  Trash2, X, Plus, AlertCircle, Loader2, Edit3, Clock, Copy, Share2
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { useAuth } from '../contexts/AuthContext';
+import { sendWhatsAppMessage } from '../services/whatsapp';
 
 const inviteSchema = z.object({
   name: z.string().min(2, 'Full name is required'),
@@ -48,6 +49,9 @@ export default function UsersPage() {
     }
   };
 
+  const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const handleInvite = async (data: InviteFormValues) => {
     setIsLoading(true);
     try {
@@ -61,18 +65,16 @@ export default function UsersPage() {
         return;
       }
 
-      // We need the pharmacy's real name for the invite screen the new person will see.
-      // profile doesn't carry it directly, so pull it fresh.
       const pharmacy = await db.getMyPharmacy(profile.pharmacy_id);
 
       // TODO: SUPABASE - insert staff_invites record with role field, send invite link
-      await db.inviteStaffMember(profile.pharmacy_id, pharmacy.name, data.name, data.email, data.role);
+      const inviteLink = await db.inviteStaffMember(profile.pharmacy_id, pharmacy.name, data.name, data.email, data.role);
 
+      setCreatedInviteLink(inviteLink);
       await refreshData();
       setFormOpen(false);
       reset();
-      setNotification(`Invite created for ${data.email}. Ask them to sign up at /register with this exact email — they'll be prompted to join automatically.`);
-      setTimeout(() => setNotification(null), 6000);
+      setNotification(`Invite token created for ${data.name} (${data.role}). Share the generated invite link below.`);
     } catch (err: any) {
       alert(err.message || 'Failed to create invite.');
     } finally {
@@ -140,6 +142,54 @@ export default function UsersPage() {
           <span>Invite Employee</span>
         </button>
       </div>
+
+      {/* GENERATED INVITE LINK CARD */}
+      {createdInviteLink && (
+        <div className="p-4 rounded-2xl border border-blue-200 bg-blue-50/80 dark:bg-blue-950/40 dark:border-blue-900/50 space-y-2 animate-slideIn">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2 text-xs font-bold text-blue-900 dark:text-blue-300">
+              <CheckCircle2 className="h-4.5 w-4.5 text-blue-600" />
+              <span>Staff Invitation Link Generated</span>
+            </div>
+            <button onClick={() => setCreatedInviteLink(null)} className="text-gray-400 hover:text-gray-600 text-xs">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={createdInviteLink}
+              className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-blue-200 dark:border-gray-800 rounded-xl text-xs font-mono text-gray-800 dark:text-gray-200"
+            />
+            <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(createdInviteLink);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2500);
+                }}
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-xs"
+              >
+                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const msg = `Hi, you've been invited to join our pharmacy workspace on Livafil! Click here to accept: ${createdInviteLink}`;
+                  sendWhatsAppMessage('', msg);
+                }}
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-xs"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                <span>Share WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FLOATING NOTIFICATION */}
       {notification && (
