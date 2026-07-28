@@ -3,7 +3,7 @@ import {
   Search, Barcode, ShoppingCart, Trash2, Plus, Minus, User, 
   CreditCard, Receipt, History, RotateCcw, BarChart3, Settings, 
   Sparkles, AlertCircle, RefreshCw, Printer, Download, Filter, 
-  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera, Mic, WifiOff
+  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera, Mic, WifiOff, AlarmClock, Send
 } from 'lucide-react';
 import VoiceAgentModal from '../components/VoiceAgentModal';
 import { 
@@ -1866,60 +1866,110 @@ export default function BillingPage() {
                 </div>
               )}
 
-              {/* REQUIRED PRESCRIPTIONS UI */}
-              {cart.filter(i => medicines.find(m => m.id === i.medicineId)?.prescriptionRequired).length > 0 && customerPhone.length >= 10 && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 border border-blue-100 dark:border-blue-800 animate-slideDown flex flex-col gap-3">
-                  <div className="flex items-center gap-1.5 mb-1 text-blue-700 dark:text-blue-400">
-                    <Info className="w-4 h-4" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider">Required Prescriptions</span>
+              {/* REQUIRED PRESCRIPTIONS & WHATSAPP REFILL SCHEDULE UI */}
+              {cart.filter(i => medicines.find(m => m.id === i.medicineId)?.prescriptionRequired).length > 0 && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3.5 border border-blue-200 dark:border-blue-800 animate-slideDown flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300">
+                      <AlarmClock className="w-4 h-4 text-blue-600" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Prescription Refill &amp; WhatsApp Schedule</span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                      Auto Refill Sync
+                    </span>
                   </div>
+
+                  {customerPhone.length < 10 && (
+                    <div className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                      💡 <strong>Tip:</strong> Enter customer phone above to enable direct 1-click WhatsApp Refill Reminders.
+                    </div>
+                  )}
+
                   {cart.filter(i => medicines.find(m => m.id === i.medicineId)?.prescriptionRequired).map(item => {
                     const med = medicines.find(m => m.id === item.medicineId);
-                    const pState = prescriptionInputs[item.medicineId];
-                    if (!pState) return null;
+                    const pState = prescriptionInputs[item.medicineId] || { totalDays: '90', suppliedDays: '30' };
+                    
+                    const totalDays = parseInt(pState.totalDays || '90');
+                    const suppliedDays = parseInt(pState.suppliedDays || '30');
+                    const remainingDays = Math.max(0, totalDays - suppliedDays);
+                    
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + suppliedDays);
+                    const formattedDueDate = dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
                     return (
-                      <div key={item.medicineId} className="bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-blue-100 dark:border-blue-800/50">
-                        <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">{med?.name}</div>
-                        {pState.activePrescription ? (
+                      <div key={item.medicineId} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-blue-100 dark:border-blue-800/60 shadow-xs space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{med?.name}</span>
+                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                            Rx Active
+                          </span>
+                        </div>
+
+                        {(pState as any)?.activePrescription ? (
                           <div className="space-y-2">
-                            <div className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">
-                              Continuing prescription: {pState.activePrescription.filledDays} / {pState.activePrescription.totalDurationDays} days filled
+                            <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 p-2 rounded-lg font-medium flex justify-between items-center">
+                              <span>Existing Prescription:</span>
+                              <span className="font-bold">{(pState as any).activePrescription.filledDays} / {(pState as any).activePrescription.totalDurationDays} days filled</span>
                             </div>
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-500">Days supplied this purchase:</span>
+                              <span className="text-slate-600 dark:text-slate-300 font-medium">Days Dispensed Today:</span>
                               <input 
                                 type="number"
                                 value={pState.suppliedDays}
                                 onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], suppliedDays: e.target.value}}))}
-                                placeholder="Days"
-                                className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-blue-500"
+                                placeholder="30"
+                                className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold"
                               />
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-500">Total prescription duration:</span>
-                              <input 
-                                type="number"
-                                value={pState.totalDays}
-                                onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], totalDays: e.target.value}}))}
-                                placeholder="Days"
-                                className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-blue-500"
-                              />
+                              <span className="text-slate-600 dark:text-slate-300 font-medium">Doctor Prescribed Total:</span>
+                              <div className="flex items-center gap-1">
+                                <input 
+                                  type="number"
+                                  value={pState.totalDays}
+                                  onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], totalDays: e.target.value}}))}
+                                  placeholder="90"
+                                  className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold"
+                                />
+                                <span className="text-[10px] text-slate-400 font-semibold">Days</span>
+                              </div>
                             </div>
+
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-500">Days supplied this purchase:</span>
-                              <input 
-                                type="number"
-                                value={pState.suppliedDays}
-                                onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], suppliedDays: e.target.value}}))}
-                                placeholder="Days"
-                                className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-blue-500"
-                              />
+                              <span className="text-slate-600 dark:text-slate-300 font-medium">Customer Takes Today:</span>
+                              <div className="flex items-center gap-1">
+                                <input 
+                                  type="number"
+                                  value={pState.suppliedDays}
+                                  onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], suppliedDays: e.target.value}}))}
+                                  placeholder="30"
+                                  className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold text-emerald-600"
+                                />
+                                <span className="text-[10px] text-slate-400 font-semibold">Days</span>
+                              </div>
                             </div>
                           </div>
                         )}
+
+                        {/* Live Refill Calculation Card */}
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] space-y-1">
+                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300 font-semibold">
+                            <span>📅 Next Refill Due Date:</span>
+                            <span className="text-blue-600 dark:text-blue-400 font-extrabold">{formattedDueDate}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-slate-500 text-[10px]">
+                            <span>Unfilled Duration Remaining:</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">{remainingDays} Days</span>
+                          </div>
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                            <Send className="w-3 h-3 text-emerald-500" />
+                            Direct sync to Refill Reminders page &amp; WhatsApp queue
+                          </div>
+                        </div>
                       </div>
                     );
                   })}

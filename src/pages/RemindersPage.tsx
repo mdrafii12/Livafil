@@ -14,9 +14,12 @@ export default function RemindersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const [myPharmacy, setMyPharmacy] = useState<import('../types').Pharmacy | null>(null);
+
   useEffect(() => {
     if (profile?.pharmacy_id) {
       loadReminders();
+      db.getMyPharmacy(profile.pharmacy_id).then(setMyPharmacy).catch(() => null);
     }
   }, [profile]);
 
@@ -40,8 +43,12 @@ export default function RemindersPage() {
   const handleSendReminder = async (r: ReminderSchedule) => {
     setUpdatingId(r.id);
     try {
-      const pharmacyName = (profile as any)?.pharmacy_name || 'LIVAFIL Pharmacy';
-      const message = `Hi ${r.customerName}, your ${r.medicineName} refill may be due soon. Reply to reorder or visit ${pharmacyName}.`;
+      const p = r.prescriptionId ? prescriptions.find(x => x.id === r.prescriptionId) : null;
+      const pharmacyName = myPharmacy?.name || 'our pharmacy';
+      const fillProgress = p ? ` (${p.filledDays}/${p.totalDurationDays} days filled)` : '';
+      const formattedDate = new Date(r.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      
+      const message = `Hi ${r.customerName}, your ${r.medicineName} refill${fillProgress} is due on ${formattedDate}. Reply to reorder or visit ${pharmacyName}.`;
       
       // Update status in DB
       await db.updateReminderStatus(r.id, 'Sent');
@@ -53,7 +60,6 @@ export default function RemindersPage() {
       setReminders(prev => prev.map(rem => rem.id === r.id ? { ...rem, status: 'Sent' } : rem));
     } catch (err: any) {
       console.error('Failed to update status or send message:', err);
-      alert('Failed to send reminder via WhatsApp API. Check API Secrets or server logs.');
     } finally {
       setUpdatingId(null);
     }

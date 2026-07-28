@@ -107,6 +107,15 @@ export async function processSyncQueue(pharmacyId?: string): Promise<{
           // VERIFY SUPABASE RETURNED SUCCESSFUL RESULT BEFORE REMOVING FROM QUEUE
           if (checkoutBill && checkoutBill.id && checkoutBill.invoiceNumber) {
             console.log(`[OFFLINE SYNC] SUCCESS! Supabase confirmed bill creation (Invoice: ${checkoutBill.invoiceNumber}, Bill ID: ${checkoutBill.id}).`);
+
+            if (item.payload.reminderSchedules && Array.isArray(item.payload.reminderSchedules)) {
+              const schedules = item.payload.reminderSchedules.map((s: any) => ({
+                ...s,
+                billId: checkoutBill.id
+              }));
+              await db.addReminderSchedules(schedules).catch(e => console.warn('[OFFLINE SYNC] Failed to add reminder schedules:', e));
+            }
+
             console.log(`[OFFLINE SYNC] Removing item ${item.id} from local IndexedDB sync_queue.`);
             await removeSyncItem(item.id);
             syncedCount++;
