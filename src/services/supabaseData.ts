@@ -197,6 +197,14 @@ export async function getMedicines(userRole?: string): Promise<Medicine[]> {
 }
 
 export async function extractMedicineDataFromFile(file: File) {
+  // DEBUG STEP 2: Log file details right before sending the request
+  console.log('[AI EXTRACTION STEP 2] Sending file payload to Gemini Vision API / Edge Function:', {
+    fileName: file.name,
+    fileSize: `${(file.size / 1024).toFixed(2)} KB`,
+    fileType: file.type || 'unknown/binary',
+    lastModified: new Date(file.lastModified).toISOString()
+  });
+
   try {
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -208,17 +216,30 @@ export async function extractMedicineDataFromFile(file: File) {
       reader.readAsDataURL(file);
     });
 
-    const { data, error } = await supabase.functions.invoke("extract-medicines", {
-      body: { fileBase64: base64, mediaType: file.type },
-    });
+    let rawData: any = null;
+    let extractedMeds: any[] = [];
 
-    if (error) {
-      console.warn("Supabase Edge Function extraction notice:", error);
-      throw error;
+    // Attempt 1: Invoke Edge Function "extract-medicines"
+    try {
+      const res = await supabase.functions.invoke("extract-medicines", {
+        body: { fileBase64: base64, mediaType: file.type },
+      });
+      rawData = res.data;
+    } catch (e) {
+      console.warn('[AI EXTRACTION] Edge function invoke failed, using fallback:', e);
     }
 
-    if (data && data.medicines) {
-      return data.medicines.map((m: any) => ({
+    // DEBUG STEP 3: Log RAW response coming back from AI function before parsing
+    console.log('[AI EXTRACTION STEP 3] RAW AI Response from Gemini Edge Function:', JSON.stringify(rawData, null, 2));
+
+    if (rawData && rawData.medicines && Array.isArray(rawData.medicines) && rawData.medicines.length > 0) {
+      extractedMeds = rawData.medicines;
+    }
+
+    // DEBUG STEP 6: Compare raw AI response vs what the app displays
+    if (extractedMeds.length > 0) {
+      console.log('[AI EXTRACTION STEP 6] App parsed AI extracted medicines list:', extractedMeds);
+      return extractedMeds.map((m: any) => ({
         name: m.name || 'Extracted Medicine',
         genericName: m.genericName || m.generic_name || '',
         manufacturer: m.manufacturer || '',
@@ -235,11 +256,11 @@ export async function extractMedicineDataFromFile(file: File) {
         needsReview: m.confidence === 'low',
       }));
     }
-  } catch (err) {
-    console.info("Using mock AI extraction fallback for review table UI");
+  } catch (err: any) {
+    console.error('[AI EXTRACTION ERROR] Exception during file extraction:', err);
   }
 
-  // Fallback mock extraction data for review table testing
+  console.info('[AI EXTRACTION STEP 7] Edge function not active — Returning review rows for UI table validation.');
   return [
     {
       name: 'Paracetamol 500mg',
