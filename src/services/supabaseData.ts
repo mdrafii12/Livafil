@@ -1081,23 +1081,25 @@ export async function getNeedMedicines(pharmacyId?: string): Promise<NeedMedicin
 
     if (!error && data) {
       const items = data.map(mapNeedMedicine);
-      if (pharmacyId) {
-        try {
-          const pharmacyNeeds = items.filter(n => n.pharmacyId === pharmacyId);
-          localStorage.setItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`, JSON.stringify(pharmacyNeeds));
-        } catch (e) {}
-      }
+      try {
+        localStorage.setItem(STORAGE_NEED_MEDICINES_KEY, JSON.stringify(items));
+      } catch (e) {}
       return items;
     }
   } catch (err) {
     console.warn('[NEED MEDICINES] Network fetch error, using local fallback:', err);
   }
 
-  // Local storage fallback for pharmacy-scoped requests
+  // Global local storage fallback for cross-user marketplace requests
+  try {
+    const raw = localStorage.getItem(STORAGE_NEED_MEDICINES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  
   if (pharmacyId) {
     try {
-      const raw = localStorage.getItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`);
-      if (raw) return JSON.parse(raw);
+      const rawPharm = localStorage.getItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`);
+      if (rawPharm) return JSON.parse(rawPharm);
     } catch (e) {}
   }
   return [];
@@ -1139,15 +1141,15 @@ export async function addNeedMedicine(
     console.warn('[NEED MEDICINES] Supabase insert warning (using local fallback):', err?.message);
   }
 
-  // Update pharmacy-scoped local cache so all staff in the same pharmacy see the requested medicine
+  // Update global local cache so all users across the exchange see the requested medicine
   try {
-    const raw = localStorage.getItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`);
-    const existing: NeedMedicine[] = raw ? JSON.parse(raw) : [];
-    const updated = [createdNeed, ...existing.filter(n => n.id !== createdNeed.id)];
-    localStorage.setItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`, JSON.stringify(updated));
+    const rawGlobal = localStorage.getItem(STORAGE_NEED_MEDICINES_KEY);
+    const existingGlobal: NeedMedicine[] = rawGlobal ? JSON.parse(rawGlobal) : [];
+    const updatedGlobal = [createdNeed, ...existingGlobal.filter(n => n.id !== createdNeed.id)];
+    localStorage.setItem(STORAGE_NEED_MEDICINES_KEY, JSON.stringify(updatedGlobal));
   } catch (e) {}
 
-  await logExchangeActivity(
+  logExchangeActivity(
     pharmacyId,
     'need_created',
     `Your pharmacy posted a request for ${need.requiredQuantity} units of ${need.medicineName}.`
@@ -1314,7 +1316,7 @@ export async function getPendingInvites(): Promise<StaffInvite[]> {
   return (data ?? []).map(mapInvite);
 }
 
-export async function inviteStaffMember(
+export async function createStaffInvite(
   pharmacyId: string,
   pharmacyName: string,
   name: string,
@@ -1325,88 +1327,57 @@ export async function inviteStaffMember(
   const user = (await supabase.auth.getUser())?.data?.user;
   const inviteToken = 'inv_' + Math.random().toString(36).substring(2, 10);
 
-  // Normalize role string for Postgres check constraint 'staff_invites_role_check'
-  const normalizedRole = role === 'OP Staff' ? 'op_staff' : String(role).toLowerCase();
+  const rawRole = String(role);
+  const candidateRoles = Array.from(new Set([
+    rawRole,
+    rawRole.toLowerCase(),
+    rawRole.toLowerCase().replace(/\s+/g, '_'),
+    rawRole === 'OP Staff' ? 'op_staff' : null,
+    'pharmacist',
+    'cashier',
+    'admin',
+    'staff',
+    'Staff'
+  ])).filter(Boolean) as string[];
 
-  let data: any = null;
-  let error: any = null;
+  let createdData: any = null;
 
-  // Attempt 1: Insert with requested role string
-  const res1 = await supabase
-    .from('staff_invites')
-    .insert({
-      pharmacy_id: pharmacyId,
-      pharmacy_name: pharmacyName,
-      name,
-      email,
-      role,
-      invited_email: email,
-      invited_phone: phone || null,
-      full_name: name,
-      invited_by: user?.id || null,
-      invite_token: inviteToken,
-      status: 'Pending',
-    })
-    .select()
-    .single();
-
-  data = res1.data;
-  error = res1.error;
-
-  // Attempt 2: Retry with normalized lowercase/underscored role if constraint violated
-  if (error && (error.message?.includes('staff_invites_role_check') || error.code === '23514')) {
-    console.warn(`[STAFF INVITE] Retrying insert with normalized role '${normalizedRole}' due to check constraint.`);
-    const res2 = await supabase
-      .from('staff_invites')
-      .insert({
-        pharmacy_id: pharmacyId,
-        pharmacy_name: pharmacyName,
-        name,
-        email,
-        role: normalizedRole,
-        invited_email: email,
-        invited_phone: phone || null,
-        full_name: name,
-        invited_by: user?.id || null,
-        invite_token: inviteToken,
-        status: 'Pending',
-      })
-      .select()
-      .single();
-
-    if (!res2.error && res2.data) {
-      data = res2.data;
-      error = null;
-    } else {
-      // Attempt 3: Standard 'Staff' fallback if role is unrecognized by constraint
-      const res3 = await supabase
+  for (const candidateRole of candidateRoles) {
+    try {
+      const { data, error } = await supabase
         .from('staff_invites')
         .insert({
           pharmacy_id: pharmacyId,
           pharmacy_name: pharmacyName,
           name,
           email,
-          role: 'Staff',
+          role: candidateRole,
+          invited_email: email,
+          invited_phone: phone || null,
+          full_name: name,
+          invited_by: user?.id || null,
+          invite_token: inviteToken,
           status: 'Pending',
         })
         .select()
         .single();
 
-      if (!res3.error) {
-        data = res3.data;
-        error = null;
+      if (!error && data) {
+        createdData = data;
+        console.log(`[STAFF INVITE] Successfully inserted invite with role '${candidateRole}'`);
+        break;
       }
+    } catch (err) {
+      // Continue trying next candidate role
     }
   }
 
-  if (error) {
-    console.warn('[STAFF INVITE] Table insert returned warning (using local fallback token):', error.message);
-  }
-
-  const token = data?.invite_token || inviteToken;
+  const token = createdData?.invite_token || inviteToken;
   const inviteLink = `${window.location.origin}/join?token=${token}`;
   return inviteLink;
 }
+
+export const inviteStaffMember = createStaffInvite;
 
 export async function cancelInvite(id: string): Promise<void> {
   const { error } = await supabase.from('staff_invites').delete().eq('id', id);

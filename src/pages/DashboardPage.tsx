@@ -6,7 +6,7 @@ import {
   Sparkles, PlusCircle, ArrowRightCircle, Download, FileText, 
   ArrowUpRight, ArrowDownRight, RefreshCw, Calendar, Sparkle,
   Shield, DollarSign, Activity, Percent, ArrowRight, CheckCircle,
-  ThumbsUp, Tag, ShoppingCart, Info, RotateCcw, Flame, Bell, Send
+  ThumbsUp, Tag, ShoppingCart, Info, RotateCcw, Flame, Bell, Send, Monitor
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -43,6 +43,7 @@ const [suppliers, setSuppliers] = useState<import('../types').Supplier[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [desktopModalOpen, setDesktopModalOpen] = useState(false);
 
   // Load state
  const refreshAllState = async () => {
@@ -320,21 +321,84 @@ const handleApplyDiscount = async (batchId: string) => {
           </div>
           <div>
             <h4 className="text-xs font-bold text-white flex items-center gap-2">
-              LIVAFIL for Windows (Desktop App)
+              LIVAFIL Windows Desktop App
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              Prefer a desktop app? Download LIVAFIL for Windows for dedicated window management and quick access.
+              Launch LIVAFIL in a dedicated, high-performance Windows desktop app window with instant taskbar access.
             </p>
           </div>
         </div>
-        <a 
-          href="/downloads/LIVAFIL-Setup.exe"
-          download="LIVAFIL-Setup.exe"
+        <button 
+          onClick={() => setDesktopModalOpen(true)}
           className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2"
         >
-          <Download className="w-4 h-4" /> Download Desktop App (Windows)
-        </a>
+          <Download className="w-4 h-4" /> Install Desktop App (Windows)
+        </button>
       </div>
+
+      {/* DESKTOP APP INSTALLATION MODAL */}
+      {desktopModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scaleUp">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-xl">
+                  <Monitor className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Install LIVAFIL Desktop App</h3>
+                  <p className="text-xs text-slate-400">Run LIVAFIL as a native Windows Desktop Application</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setDesktopModalOpen(false)}
+                className="text-slate-400 hover:text-white text-lg font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <div className="p-3 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5">
+                <div className="font-bold text-blue-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" /> Recommended 1-Click Desktop Installation:
+                </div>
+                <p>Click the button below to launch Chrome / Edge Native App Installer directly into your Windows desktop and taskbar.</p>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="font-bold text-slate-200">Manual Browser Installation Steps:</div>
+                <ol className="list-decimal list-inside space-y-1.5 text-slate-400">
+                  <li>In your browser address bar (Chrome or Microsoft Edge), click the <strong>Install LIVAFIL</strong> icon on the right end of the URL bar.</li>
+                  <li>Alternatively, click browser <strong>Menu (⋮)</strong> $\rightarrow$ <strong>Save &amp; Share</strong> $\rightarrow$ <strong>Install LIVAFIL as App</strong>.</li>
+                  <li>Click <strong>Install</strong> to pin LIVAFIL directly to your Windows Desktop &amp; Start Menu!</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setDesktopModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  if ((window as any).deferredPrompt) {
+                    (window as any).deferredPrompt.prompt();
+                  } else {
+                    alert('To install LIVAFIL as a Desktop App: Click the Install icon in your browser URL bar or select Menu (⋮) -> Save and Share -> Install LIVAFIL.');
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Launch Desktop Installer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. THE INTEL CORE METRICS BENTO GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

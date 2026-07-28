@@ -43,7 +43,7 @@ export default function OpdPage() {
     phone: '',
     gender: 'Male' as 'Male' | 'Female' | 'Other',
     age: 30,
-    bloodGroup: 'O+',
+    bloodGroup: '',
     address: '',
     allergies: '',
     chronicConditions: ''
@@ -1428,8 +1428,9 @@ export default function OpdPage() {
                   <select 
                     value={newPatient.bloodGroup}
                     onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 dark:text-white font-bold"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 dark:text-white font-bold text-xs"
                   >
+                    <option value="">-- Select Blood Group (Optional) --</option>
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
                     <option value="A+">A+</option>
