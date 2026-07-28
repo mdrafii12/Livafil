@@ -3,7 +3,7 @@ import {
   Search, Barcode, ShoppingCart, Trash2, Plus, Minus, User, 
   CreditCard, Receipt, History, RotateCcw, BarChart3, Settings, 
   Sparkles, AlertCircle, RefreshCw, Printer, Download, Filter, 
-  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera, Mic
+  FileText, ArrowRight, Check, X, Tag, DollarSign, Percent, Info, Camera, Mic, WifiOff
 } from 'lucide-react';
 import VoiceAgentModal from '../components/VoiceAgentModal';
 import { 
@@ -19,6 +19,13 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { QRCodeCanvas } from 'qrcode.react';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { 
+  saveMedicinesCache, 
+  getMedicinesCache, 
+  deductLocalBatchStock, 
+  enqueueSyncItem 
+} from '../services/offlineDBService';
 
 export default function BillingPage() {
   // DB States
@@ -107,33 +114,59 @@ export default function BillingPage() {
   const [opdConsultations, setOpdConsultations] = useState<import('../types').OpConsultation[]>([]);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
+  const isOnline = useOnlineStatus();
+  const [isOfflineCacheEmpty, setIsOfflineCacheEmpty] = useState(false);
+
   // Load Initial DB States
   const loadDBState = async () => {
-    try {
-      const [m, b, c, bl, p, patientsData, consultationsData] = await Promise.all([
-        db.getMedicines(),
-        db.getBatches(),
-        db.getCategories(),
-        db.getBills(),
-        profile?.pharmacy_id ? db.getMyPharmacy(profile.pharmacy_id) : Promise.resolve(null),
-        profile?.pharmacy_id ? db.getPatients(profile.pharmacy_id).catch(() => []) : Promise.resolve([]),
-        profile?.pharmacy_id ? db.getOpConsultations(profile.pharmacy_id).catch(() => []) : Promise.resolve([])
-      ]);
-      setMedicines(m);
-      setBatches(b);
-      setCategories(c);
-      setBills(bl);
-      if (p) setPharmacy(p);
-      setOpdPatients(patientsData || []);
-      setOpdConsultations(consultationsData || []);
-    } catch (err) {
-      console.error(err);
+    if (!profile?.pharmacy_id) return;
+
+    if (isOnline) {
+      try {
+        const [m, b, c, bl, p, patientsData, consultationsData] = await Promise.all([
+          db.getMedicines(),
+          db.getBatches(),
+          db.getCategories(),
+          db.getBills(),
+          db.getMyPharmacy(profile.pharmacy_id),
+          db.getPatients(profile.pharmacy_id).catch(() => []),
+          db.getOpConsultations(profile.pharmacy_id).catch(() => [])
+        ]);
+        setMedicines(m);
+        setBatches(b);
+        setCategories(c);
+        setBills(bl);
+        if (p) setPharmacy(p);
+        setOpdPatients(patientsData || []);
+        setOpdConsultations(consultationsData || []);
+        setIsOfflineCacheEmpty(false);
+
+        // Save to IndexedDB medicines_cache
+        await saveMedicinesCache(profile.pharmacy_id, { medicines: m, batches: b });
+      } catch (err) {
+        console.error('Online load error, attempting local cache fallback:', err);
+        await loadFromCache();
+      }
+    } else {
+      await loadFromCache();
+    }
+  };
+
+  const loadFromCache = async () => {
+    if (!profile?.pharmacy_id) return;
+    const cache = await getMedicinesCache(profile.pharmacy_id);
+    if (cache && cache.data && cache.data.medicines.length > 0) {
+      setMedicines(cache.data.medicines);
+      setBatches(cache.data.batches);
+      setIsOfflineCacheEmpty(false);
+    } else {
+      setIsOfflineCacheEmpty(true);
     }
   };
 
   useEffect(() => {
     loadDBState();
-  }, [profile]);
+  }, [profile, isOnline]);
 
   // Effect to load active prescriptions when cart or customer phone changes
   useEffect(() => {
@@ -560,6 +593,55 @@ export default function BillingPage() {
       email: customerEmail.trim() || 'guest@livafil.com',
       notes: customerNotes.trim() || undefined
     };
+
+    if (!isOnline) {
+      // OFFLINE CHECKOUT: Queue transaction in sync_queue & deduct local stock
+      const offlineBillId = 'sync_bill_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      const billPayload = {
+        customer: customerPayload,
+        items: cart.map(({ maxQty, expDate, ...rest }) => rest),
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        taxTotal: totals.taxTotal,
+        grandTotal: totals.grandTotal,
+        paymentMethod: paymentMethod,
+        notes: `Dispensed offline on ${new Date().toLocaleDateString('en-IN')} via Cashier Terminal`,
+        prescriptionImageUrl: prescriptionImage
+      };
+
+      await enqueueSyncItem({
+        id: offlineBillId,
+        pharmacyId: profile.pharmacy_id,
+        type: 'bill',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        staffId: profile.id,
+        staffName: profile.name,
+        payload: billPayload,
+        requestedQuantity: cart.reduce((sum, i) => sum + i.quantity, 0)
+      });
+
+      // Deduct local batch stock immediately in IndexedDB medicines_cache
+      for (const item of cart) {
+        await deductLocalBatchStock(profile.pharmacy_id, item.batchId, item.quantity);
+      }
+
+      // Reload local cache into state so subsequent selections show reduced quantity
+      await loadFromCache();
+
+      showToast('success', 'Bill saved offline (Pending sync - will upload when internet returns)');
+      
+      // Reset State
+      setCart([]);
+      setCustomerName('');
+      setCustomerPhone('');
+      setCustomerEmail('');
+      setCustomerNotes('');
+      setCashReceived('');
+      setCardUpiAmount('');
+      setPrescriptionImage(null);
+      return;
+    }
 
     try {
       let finalPrescriptionImageUrl = undefined;
@@ -1042,6 +1124,21 @@ export default function BillingPage() {
             Dispense prescriptions instantly. Automatic FEFO/FIFO selection, live inventory updates &amp; intelligence recalculation.
           </p>
         </div>
+
+        {/* EMPTY OFFLINE MEDICINE CACHE FALLBACK */}
+        {!isOnline && isOfflineCacheEmpty && (
+          <div className="p-8 my-4 text-center border-2 border-dashed border-rose-200 dark:border-rose-900/40 rounded-3xl bg-rose-50/20 dark:bg-rose-950/10 space-y-3">
+            <div className="p-3 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-2xl w-12 h-12 mx-auto flex items-center justify-center shadow-xs">
+              <WifiOff className="h-6 w-6" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+              No Medicine Data Available Offline Yet
+            </h3>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Please connect to the internet at least once first to sync your inventory medicines into offline storage.
+            </p>
+          </div>
+        )}
         
         {/* Navigation Tabs */}
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 select-none">

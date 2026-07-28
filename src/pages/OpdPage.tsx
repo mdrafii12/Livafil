@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Stethoscope, UserPlus, Search, Plus, CheckCircle, Clock, 
   Send, FileText, Activity, AlertCircle, Trash2, Printer, Download,
-  ChevronRight, RefreshCw, UserCheck, ShieldAlert, Pill, HeartPulse, Sparkles, Mic
+  ChevronRight, RefreshCw, UserCheck, ShieldAlert, Pill, HeartPulse, Sparkles, Mic, WifiOff
 } from 'lucide-react';
 import VoiceAgentModal from '../components/VoiceAgentModal';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,8 @@ import { Patient, OpConsultation, Medicine, OpPrescriptionItem } from '../types'
 import { formatCurrency } from '../utils/currency';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { saveMedicinesCache, getMedicinesCache, enqueueSyncItem } from '../services/offlineDBService';
 
 export default function OpdPage() {
   const { profile } = useAuth();
@@ -85,26 +87,52 @@ export default function OpdPage() {
     return () => clearInterval(interval);
   }, [profile, voiceModalOpen]);
 
+  const isOnline = useOnlineStatus();
+  const [isOfflineCacheEmpty, setIsOfflineCacheEmpty] = useState(false);
+
   const loadData = async () => {
     if (!profile?.pharmacy_id) return;
     setLoading(true);
-    try {
-      const [pData, cData, mData, pharm, docsData] = await Promise.all([
-        db.getPatients(profile.pharmacy_id),
-        db.getOpConsultations(profile.pharmacy_id),
-        db.getMedicines(),
-        db.getMyPharmacy(profile.pharmacy_id).catch(() => null),
-        db.getRegisteredDoctors(profile.pharmacy_id)
-      ]);
-      setPatients(pData);
-      setConsultations(cData);
-      setMedicines(mData);
-      setRegisteredDoctors(docsData);
-      if (pharm) setMyPharmacy(pharm);
-    } catch (err) {
-      console.error('Failed to load OPD data:', err);
-    } finally {
+
+    if (isOnline) {
+      try {
+        const [pData, cData, mData, pharm, docsData, bData] = await Promise.all([
+          db.getPatients(profile.pharmacy_id),
+          db.getOpConsultations(profile.pharmacy_id),
+          db.getMedicines(),
+          db.getMyPharmacy(profile.pharmacy_id).catch(() => null),
+          db.getRegisteredDoctors(profile.pharmacy_id),
+          db.getBatches().catch(() => [])
+        ]);
+        setPatients(pData);
+        setConsultations(cData);
+        setMedicines(mData);
+        setRegisteredDoctors(docsData);
+        if (pharm) setMyPharmacy(pharm);
+        setIsOfflineCacheEmpty(false);
+
+        // Save medicines and batches to IndexedDB
+        await saveMedicinesCache(profile.pharmacy_id, { medicines: mData, batches: bData });
+      } catch (err) {
+        console.error('Failed to load OPD data online, falling back to cache:', err);
+        await loadFromCache();
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      await loadFromCache();
       setLoading(false);
+    }
+  };
+
+  const loadFromCache = async () => {
+    if (!profile?.pharmacy_id) return;
+    const cache = await getMedicinesCache(profile.pharmacy_id);
+    if (cache && cache.data && cache.data.medicines.length > 0) {
+      setMedicines(cache.data.medicines);
+      setIsOfflineCacheEmpty(false);
+    } else {
+      setIsOfflineCacheEmpty(true);
     }
   };
 
@@ -195,6 +223,42 @@ export default function OpdPage() {
     if (!profile?.pharmacy_id) return;
     if (!selectedPatient) {
       showToast('error', 'Please select or register an Out-Patient first.');
+      return;
+    }
+
+    if (!isOnline) {
+      const tokenNum = 'OPD-OFF-' + Math.floor(100 + Math.random() * 900);
+      const status = statusOverride || 'Completed';
+      const consultationPayload = {
+        uhid: selectedPatient.uhid,
+        patientName: selectedPatient.name,
+        patientPhone: selectedPatient.phone,
+        gender: selectedPatient.gender,
+        age: selectedPatient.age,
+        doctorName,
+        vitals,
+        diagnosis,
+        medicines: rxItems,
+        consultationFee,
+        tokenNumber: tokenNum,
+        status
+      };
+
+      await enqueueSyncItem({
+        id: 'sync_opd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        pharmacyId: profile.pharmacy_id,
+        type: 'opd_consultation',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        staffId: profile.id,
+        staffName: profile.name,
+        payload: consultationPayload,
+        requestedQuantity: rxItems.reduce((sum, i) => sum + i.quantity, 0)
+      });
+
+      showToast('success', `OP Consultation ${tokenNum} saved offline (Pending sync - will upload when internet returns)`);
+      setDiagnosis('');
+      setRxItems([]);
       return;
     }
 

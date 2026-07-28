@@ -1,59 +1,115 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { offlineSync } from '../services/offlineSyncService';
+import { Wifi, WifiOff, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { getPendingSyncQueue, getConflictSyncQueue } from '../services/offlineDBService';
+import { processSyncQueue } from '../services/offlineSyncEngine';
+import { useAuth } from '../contexts/AuthContext';
+import SyncIssuesModal from './SyncIssuesModal';
 
 export default function OfflineSyncBadge() {
-  const [isOnline, setIsOnline] = useState(offlineSync.isOnline());
-  const [pendingCount, setPendingCount] = useState(offlineSync.getQueue().length);
+  const isOnline = useOnlineStatus();
+  const { profile } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [conflictCount, setConflictCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = offlineSync.subscribe((online, count) => {
-      setIsOnline(online);
-      setPendingCount(count);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleManualSync = async () => {
-    if (!isOnline || isSyncing) return;
-    setIsSyncing(true);
-    await offlineSync.triggerAutoSync();
-    setTimeout(() => setIsSyncing(false), 800);
+  const refreshCounts = async () => {
+    if (!profile?.pharmacy_id) return;
+    try {
+      const pending = await getPendingSyncQueue(profile.pharmacy_id);
+      const conflicts = await getConflictSyncQueue(profile.pharmacy_id);
+      setPendingCount(pending.length);
+      setConflictCount(conflicts.length);
+    } catch (err) {
+      console.error('Error reading sync counts:', err);
+    }
   };
 
+  useEffect(() => {
+    refreshCounts();
+    const interval = setInterval(refreshCounts, 3000);
+    return () => clearInterval(interval);
+  }, [profile?.pharmacy_id]);
+
+  // Auto-sync when coming online
+  useEffect(() => {
+    if (isOnline && profile?.pharmacy_id) {
+      handleAutoSync();
+    }
+  }, [isOnline, profile?.pharmacy_id]);
+
+  const handleAutoSync = async () => {
+    if (!isOnline || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await processSyncQueue(profile?.pharmacy_id);
+      await refreshCounts();
+    } finally {
+      setTimeout(() => setIsSyncing(false), 800);
+    }
+  };
+
+  const isAdmin = profile?.role === 'Owner' || profile?.role === 'Manager';
+
   return (
-    <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border shadow-xs transition-all duration-300">
-      {isOnline ? (
-        <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 rounded-full">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <Wifi className="w-3.5 h-3.5" />
-          <span>Online</span>
-          {pendingCount > 0 && (
-            <button
-              onClick={handleManualSync}
-              disabled={isSyncing}
-              className="ml-1 text-amber-700 dark:text-amber-300 underline hover:no-underline flex items-center gap-1 cursor-pointer"
-            >
-              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>({pendingCount} sync)</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5 text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/50 px-2.5 py-1 rounded-full animate-pulse">
-          <WifiOff className="w-3.5 h-3.5 text-rose-600" />
-          <span>Offline Mode</span>
-          {pendingCount > 0 && (
-            <span className="bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 px-1.5 py-0.5 rounded-md font-mono text-[10px]">
-              {pendingCount} saved
+    <>
+      <div className="flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-full transition-all duration-300">
+        {isOnline ? (
+          <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-          )}
-        </div>
+            <Wifi className="w-3.5 h-3.5" />
+            <span>Online</span>
+
+            {pendingCount > 0 && (
+              <button
+                onClick={handleAutoSync}
+                disabled={isSyncing}
+                className="ml-1 text-amber-700 dark:text-amber-300 underline hover:no-underline flex items-center gap-1 cursor-pointer font-bold"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>({pendingCount} pending)</span>
+              </button>
+            )}
+
+            {conflictCount > 0 && isAdmin && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="ml-1.5 px-2 py-0.5 bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800 rounded-full text-[10px] font-extrabold flex items-center gap-1 cursor-pointer animate-pulse"
+                title="Review offline stock conflicts"
+              >
+                <ShieldAlert className="w-3 h-3 text-rose-600" />
+                <span>{conflictCount} Conflict{conflictCount > 1 ? 's' : ''}</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-rose-700 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 px-2.5 py-1 rounded-full">
+            <WifiOff className="w-3.5 h-3.5 text-rose-600" />
+            <span>Offline</span>
+            {pendingCount > 0 && (
+              <span className="bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 px-1.5 py-0.5 rounded-md font-mono text-[10px]">
+                {pendingCount} queued
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {profile?.pharmacy_id && (
+        <SyncIssuesModal
+          pharmacyId={profile.pharmacy_id}
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            refreshCounts();
+          }}
+          onQueueUpdated={refreshCounts}
+        />
       )}
-    </div>
+    </>
   );
 }
