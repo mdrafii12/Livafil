@@ -522,6 +522,41 @@ export default function BillingPage() {
     }));
   };
 
+  const updateCartItemDispensedDays = (batchId: string, daysInput: number) => {
+    const safeDays = Math.max(1, daysInput);
+    setCart(prevCart => prevCart.map(item => {
+      if (item.batchId !== batchId) return item;
+      
+      const dailyFreq = (item as any).dailyFrequency || 1;
+      const totalPrescribedDays = (item as any).totalPrescribedDays || 90;
+      const totalPrescribedQty = (item as any).totalPrescribedQuantity || (dailyFreq * totalPrescribedDays);
+
+      const calculatedQty = dailyFreq * safeDays;
+      const newQty = Math.min(item.maxQty, Math.max(1, calculatedQty));
+      const discountedPrice = item.sellingPrice * (1 - item.discount / 100);
+      const sub = parseFloat((newQty * discountedPrice * (1 + item.tax / 100)).toFixed(2));
+      const remainingQty = Math.max(0, totalPrescribedQty - newQty);
+
+      setPrescriptionInputs(prev => ({
+        ...prev,
+        [item.medicineId]: {
+          ...prev[item.medicineId],
+          totalDays: String(totalPrescribedDays),
+          suppliedDays: String(safeDays),
+          phone: customerPhone || '9999999999'
+        }
+      }));
+
+      return {
+        ...item,
+        quantity: newQty,
+        subtotal: sub,
+        daysDispensedToday: safeDays,
+        remainingPrescribedQuantity: remainingQty
+      };
+    }));
+  };
+
   const clearCart = () => {
     setCart([]);
     setCustomerName('');
@@ -1492,6 +1527,7 @@ export default function BillingPage() {
                       <tr className="bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 dark:border-slate-800">
                         <th className="py-3 px-4">Medicine Item</th>
                         <th className="py-3 px-3">Batch No.</th>
+                        <th className="py-3 px-3 text-center">Days Buying</th>
                         <th className="py-3 px-3 text-center">Qty / Stock</th>
                         <th className="py-3 px-3 text-right">Selling P.</th>
                         <th className="py-3 px-3 text-center">Disc %</th>
@@ -1505,11 +1541,62 @@ export default function BillingPage() {
                         <tr key={item.batchId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                           <td className="py-3 px-4">
                             <p className="font-bold text-slate-800 dark:text-white text-xs">{item.medicineName}</p>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Exp: {item.expDate}</span>
+                            <div className="flex items-center gap-2 mt-0.5 text-[10px]">
+                              <span className="text-slate-400 dark:text-slate-500 font-mono">Exp: {item.expDate}</span>
+                              {(item as any).dosageSchedule && (
+                                <span className="text-blue-600 dark:text-blue-400 font-semibold">{(item as any).dosageSchedule}</span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-3 font-mono text-slate-500 dark:text-slate-400">
                             {item.batchNumber}
                           </td>
+
+                          {/* Days Buying / Duration Selector Column */}
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <input 
+                                  type="number"
+                                  min="1"
+                                  value={(item as any).daysDispensedToday || 30}
+                                  onChange={(e) => updateCartItemDispensedDays(item.batchId, parseInt(e.target.value) || 1)}
+                                  className="w-14 bg-blue-50 dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-extrabold p-1 rounded text-center text-xs outline-none border border-blue-200 dark:border-slate-700"
+                                />
+                                <span className="text-[10px] text-slate-400 font-semibold">Days</span>
+                              </div>
+                              <div className="flex gap-1 text-[9px]">
+                                <button 
+                                  type="button" 
+                                  onClick={() => updateCartItemDispensedDays(item.batchId, 30)}
+                                  className={`px-1 py-0.5 rounded font-bold transition-all ${
+                                    ((item as any).daysDispensedToday || 30) === 30 ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  1 Mo
+                                </button>
+                                <button 
+                                  type="button" 
+                                  onClick={() => updateCartItemDispensedDays(item.batchId, 60)}
+                                  className={`px-1 py-0.5 rounded font-bold transition-all ${
+                                    ((item as any).daysDispensedToday || 30) === 60 ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  2 Mo
+                                </button>
+                                <button 
+                                  type="button" 
+                                  onClick={() => updateCartItemDispensedDays(item.batchId, 90)}
+                                  className={`px-1 py-0.5 rounded font-bold transition-all ${
+                                    ((item as any).daysDispensedToday || 30) === 90 ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-100'
+                                  }`}
+                                >
+                                  3 Mo
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+
                           <td className="py-3 px-3">
                             <div className="flex items-center justify-center gap-1.5">
                               <button 
