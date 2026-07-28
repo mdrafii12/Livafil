@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   BarChart4, Calendar, Download, Filter, FileText, TrendingUp, 
   AlertTriangle, Boxes, Truck, ArrowRight, Table, Search,
-  Activity, ShieldAlert, CheckCircle, Percent, Printer, FileSpreadsheet, Send, Check, AlertCircle
+  Activity, ShieldAlert, CheckCircle, Percent, Printer, FileSpreadsheet, Send, Check, AlertCircle, WifiOff, Clock, RefreshCcw
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { sendWhatsAppMessage } from '../services/whatsapp';
@@ -10,6 +10,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Medicine, Batch, Category, Supplier, Movement } from '../types';
 import { IntelligenceService } from '../services/intelligence';
 import { formatCurrency } from '../utils/currency';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { saveReportsCache, getReportsCache } from '../services/reportsIndexedDB';
 
 type ReportType = 'health' | 'recovery' | 'expiry' | 'deadstock' | 'risk';
 
@@ -39,30 +41,73 @@ export default function ReportsPage() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-useEffect(() => {
-    const loadData = async () => {
-      if (!profile?.pharmacy_id) return;
-      try {
-        const [meds, bts, cats, sups, movs, pharmacy] = await Promise.all([
-          db.getMedicines(),
-          db.getBatches(),
-          db.getCategories(),
-          db.getSuppliers(),
-          db.getMovements(),
-          db.getMyPharmacy(profile.pharmacy_id),
-        ]);
-        setMedicines(meds);
-        setBatches(bts);
-        setCategories(cats);
-        setSuppliers(sups);
-        setMovements(movs);
-        setMyPharmacy(pharmacy);
-      } catch (err) {
-        console.error(err);
+  const isOnline = useOnlineStatus();
+  const [cachedTimestamp, setCachedTimestamp] = useState<number | null>(null);
+  const [hasNoOfflineCache, setHasNoOfflineCache] = useState<boolean>(false);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const loadFromCache = async () => {
+      const cached = await getReportsCache(profile?.pharmacy_id || 'default-pharmacy');
+      if (cached && cached.data) {
+        setMedicines(cached.data.medicines || []);
+        setBatches(cached.data.batches || []);
+        setCategories(cached.data.categories || []);
+        setSuppliers(cached.data.suppliers || []);
+        setMovements(cached.data.movements || []);
+        setMyPharmacy(cached.data.pharmacy || null);
+        setCachedTimestamp(cached.timestamp);
+        setHasNoOfflineCache(false);
+      } else {
+        setHasNoOfflineCache(true);
       }
     };
+
+    const loadData = async () => {
+      if (!profile?.pharmacy_id) return;
+      setIsDataLoading(true);
+
+      if (isOnline) {
+        try {
+          const [meds, bts, cats, sups, movs, pharmacy] = await Promise.all([
+            db.getMedicines(),
+            db.getBatches(),
+            db.getCategories(),
+            db.getSuppliers(),
+            db.getMovements(),
+            db.getMyPharmacy(profile.pharmacy_id),
+          ]);
+          setMedicines(meds);
+          setBatches(bts);
+          setCategories(cats);
+          setSuppliers(sups);
+          setMovements(movs);
+          setMyPharmacy(pharmacy);
+          setCachedTimestamp(null);
+          setHasNoOfflineCache(false);
+
+          await saveReportsCache(profile.pharmacy_id, {
+            medicines: meds,
+            batches: bts,
+            categories: cats,
+            suppliers: sups,
+            movements: movs,
+            pharmacy,
+          });
+        } catch (err) {
+          console.error('Online fetch error, attempting offline cache fallback:', err);
+          await loadFromCache();
+        } finally {
+          setIsDataLoading(false);
+        }
+      } else {
+        await loadFromCache();
+        setIsDataLoading(false);
+      }
+    };
+
     loadData();
-  }, [profile?.pharmacy_id]);
+  }, [profile?.pharmacy_id, isOnline]);
 
   // Compute live intelligence states using unified service
   const healthScore = IntelligenceService.getInventoryHealth(batches, medicines);
@@ -401,7 +446,54 @@ useEffect(() => {
   return (
     <div className="space-y-6 animate-fadeIn text-slate-800 dark:text-slate-100 pb-12">
       
-      {/* HEADER SECTION */}
+      {/* PROMINENT OFFLINE BANNER */}
+      {!isOnline && cachedTimestamp && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 flex items-center justify-between gap-4 text-amber-800 dark:text-amber-300 animate-slideDown shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs">
+              <WifiOff className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                You're Offline — Showing Cached Reports
+              </h4>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
+                Displaying last successfully loaded report data as of{' '}
+                <span className="font-bold underline">{new Date(cachedTimestamp).toLocaleDateString('en-IN')} {new Date(cachedTimestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-full border border-amber-500/30 shrink-0 hidden sm:inline-block">
+            IndexedDB Cached
+          </span>
+        </div>
+      )}
+
+      {/* EMPTY OFFLINE CACHE FALLBACK */}
+      {!isOnline && hasNoOfflineCache ? (
+        <div className="p-12 text-center border-2 border-dashed border-rose-200 dark:border-rose-900/40 rounded-3xl bg-rose-50/20 dark:bg-rose-950/10 space-y-4 max-w-2xl mx-auto my-8">
+          <div className="p-3 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-xs">
+            <WifiOff className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              No Offline Data Available Yet
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+              Please connect to the internet at least once to load reports. Once loaded online, your audit metrics will be cached automatically in IndexedDB for offline viewing.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold inline-flex items-center space-x-2 shadow-xs cursor-pointer"
+            >
+              <RefreshCcw className="h-3.5 w-3.5" />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        </div>
+      ) : (<>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-sans">
@@ -756,6 +848,8 @@ useEffect(() => {
           <FileText className="h-9 w-9 text-slate-300" />
           <span className="font-medium">No ledger audit lines matched current criteria.</span>
         </div>
+      )}
+      </>
       )}
 
       {/* Toast Notification Alert */}
