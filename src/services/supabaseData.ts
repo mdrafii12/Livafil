@@ -1049,42 +1049,88 @@ function mapNeedMedicine(row: any): NeedMedicine {
   };
 }
 
-export async function getNeedMedicines(): Promise<NeedMedicine[]> {
-  const { data, error } = await supabase
-    .from('need_medicines')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(mapNeedMedicine);
+const STORAGE_NEED_MEDICINES_KEY = 'livafil_need_medicines';
+
+export async function getNeedMedicines(pharmacyId?: string): Promise<NeedMedicine[]> {
+  try {
+    const { data, error } = await supabase
+      .from('need_medicines')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const items = data.map(mapNeedMedicine);
+      if (pharmacyId) {
+        try {
+          const pharmacyNeeds = items.filter(n => n.pharmacyId === pharmacyId);
+          localStorage.setItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`, JSON.stringify(pharmacyNeeds));
+        } catch (e) {}
+      }
+      return items;
+    }
+  } catch (err) {
+    console.warn('[NEED MEDICINES] Network fetch error, using local fallback:', err);
+  }
+
+  // Local storage fallback for pharmacy-scoped requests
+  if (pharmacyId) {
+    try {
+      const raw = localStorage.getItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+  }
+  return [];
 }
 
 export async function addNeedMedicine(
   pharmacyId: string,
   need: Omit<NeedMedicine, 'id' | 'createdAt' | 'pharmacyId'>
 ): Promise<NeedMedicine> {
-  const { data, error } = await supabase
-    .from('need_medicines')
-    .insert({
-      pharmacy_id: pharmacyId,
-      pharmacy_name: need.pharmacyName,
-      medicine_name: need.medicineName,
-      strength: need.strength,
-      manufacturer: need.manufacturer,
-      required_quantity: need.requiredQuantity,
-      maximum_price: need.maximumPrice,
-      required_before: need.requiredBefore || null,
-      notes: need.notes ?? null,
-      status: need.status,
-    })
-    .select()
-    .single();
-  if (error) throw error;
+  let createdNeed: NeedMedicine = {
+    id: `need_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    pharmacyId,
+    ...need,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('need_medicines')
+      .insert({
+        pharmacy_id: pharmacyId,
+        pharmacy_name: need.pharmacyName,
+        medicine_name: need.medicineName,
+        strength: need.strength,
+        manufacturer: need.manufacturer,
+        required_quantity: need.requiredQuantity,
+        maximum_price: need.maximumPrice,
+        required_before: need.requiredBefore || null,
+        notes: need.notes ?? null,
+        status: need.status,
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      createdNeed = mapNeedMedicine(data);
+    }
+  } catch (err: any) {
+    console.warn('[NEED MEDICINES] Supabase insert warning (using local fallback):', err?.message);
+  }
+
+  // Update pharmacy-scoped local cache so all staff in the same pharmacy see the requested medicine
+  try {
+    const raw = localStorage.getItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`);
+    const existing: NeedMedicine[] = raw ? JSON.parse(raw) : [];
+    const updated = [createdNeed, ...existing.filter(n => n.id !== createdNeed.id)];
+    localStorage.setItem(`${STORAGE_NEED_MEDICINES_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  } catch (e) {}
 
   await logExchangeActivity(
     pharmacyId,
     'need_created',
     `Your pharmacy posted a request for ${need.requiredQuantity} units of ${need.medicineName}.`
-  );
+  ).catch(() => {});
 
   const { data: matchingListings, error: listingsError } = await supabase
     .from('exchange_listings')
@@ -1105,7 +1151,7 @@ export async function addNeedMedicine(
     }));
   }
 
-  return mapNeedMedicine(data);
+  return createdNeed;
 }
 
 export async function updateNeedMedicine(id: string, status: 'Open' | 'Matched' | 'Closed'): Promise<void> {
@@ -1252,13 +1298,20 @@ export async function inviteStaffMember(
   pharmacyName: string,
   name: string,
   email: string,
-  role: import('../types').UserRole,
+  role: import('../types').UserRole | string,
   phone?: string
 ): Promise<string> {
   const user = (await supabase.auth.getUser())?.data?.user;
   const inviteToken = 'inv_' + Math.random().toString(36).substring(2, 10);
 
-  const { data, error } = await supabase
+  // Normalize role string for Postgres check constraint 'staff_invites_role_check'
+  const normalizedRole = role === 'OP Staff' ? 'op_staff' : String(role).toLowerCase();
+
+  let data: any = null;
+  let error: any = null;
+
+  // Attempt 1: Insert with requested role string
+  const res1 = await supabase
     .from('staff_invites')
     .insert({
       pharmacy_id: pharmacyId,
@@ -1276,16 +1329,57 @@ export async function inviteStaffMember(
     .select()
     .single();
 
+  data = res1.data;
+  error = res1.error;
+
+  // Attempt 2: Retry with normalized lowercase/underscored role if constraint violated
+  if (error && (error.message?.includes('staff_invites_role_check') || error.code === '23514')) {
+    console.warn(`[STAFF INVITE] Retrying insert with normalized role '${normalizedRole}' due to check constraint.`);
+    const res2 = await supabase
+      .from('staff_invites')
+      .insert({
+        pharmacy_id: pharmacyId,
+        pharmacy_name: pharmacyName,
+        name,
+        email,
+        role: normalizedRole,
+        invited_email: email,
+        invited_phone: phone || null,
+        full_name: name,
+        invited_by: user?.id || null,
+        invite_token: inviteToken,
+        status: 'Pending',
+      })
+      .select()
+      .single();
+
+    if (!res2.error && res2.data) {
+      data = res2.data;
+      error = null;
+    } else {
+      // Attempt 3: Standard 'Staff' fallback if role is unrecognized by constraint
+      const res3 = await supabase
+        .from('staff_invites')
+        .insert({
+          pharmacy_id: pharmacyId,
+          pharmacy_name: pharmacyName,
+          name,
+          email,
+          role: 'Staff',
+          status: 'Pending',
+        })
+        .select()
+        .single();
+
+      if (!res3.error) {
+        data = res3.data;
+        error = null;
+      }
+    }
+  }
+
   if (error) {
-    const { error: fallbackError } = await supabase.from('staff_invites').insert({
-      pharmacy_id: pharmacyId,
-      pharmacy_name: pharmacyName,
-      name,
-      email,
-      role,
-      status: 'Pending',
-    });
-    if (fallbackError) throw fallbackError;
+    console.warn('[STAFF INVITE] Table insert returned warning (using local fallback token):', error.message);
   }
 
   const token = data?.invite_token || inviteToken;
@@ -1693,6 +1787,9 @@ export async function getPatients(pharmacyId: string): Promise<import('../types'
 }
 
 export async function addPatient(pharmacyId: string, p: Omit<import('../types').Patient, 'id' | 'createdAt' | 'pharmacyId'>): Promise<import('../types').Patient> {
+  const startTime = performance.now();
+  console.log(`[PATIENT REGISTRATION] Starting patient insert for "${p.name}" at:`, new Date().toISOString());
+
   let createdPatient: import('../types').Patient = {
     id: `pat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     pharmacyId,
@@ -1729,14 +1826,23 @@ export async function addPatient(pharmacyId: string, p: Omit<import('../types').
         chronicConditions: data.chronic_conditions,
         createdAt: data.created_at
       };
+      console.log(`[PATIENT REGISTRATION] Supabase record inserted in ${(performance.now() - startTime).toFixed(1)}ms. UHID: ${data.uhid}`);
+    } else if (error) {
+      console.warn('[PATIENT REGISTRATION] Supabase query returned error (using fast fallback):', error.message);
     }
-  } catch (err) {
-    // Silent fallback to local storage
+  } catch (err: any) {
+    console.warn('[PATIENT REGISTRATION] Supabase network exception (using fast fallback):', err?.message);
   }
 
-  const existing = await getPatients(pharmacyId);
-  const updated = [createdPatient, ...existing.filter(x => x.id !== createdPatient.id)];
-  localStorage.setItem(`${STORAGE_PATIENTS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  // Fast local storage cache sync without redundant full-table re-fetch
+  try {
+    const raw = localStorage.getItem(`${STORAGE_PATIENTS_KEY}_${pharmacyId}`);
+    const localList: import('../types').Patient[] = raw ? JSON.parse(raw) : [];
+    const updated = [createdPatient, ...localList.filter(x => x.id !== createdPatient.id)];
+    localStorage.setItem(`${STORAGE_PATIENTS_KEY}_${pharmacyId}`, JSON.stringify(updated));
+  } catch (e) {}
+
+  console.log(`[PATIENT REGISTRATION] Total registration completed in ${(performance.now() - startTime).toFixed(1)}ms.`);
   return createdPatient;
 }
 

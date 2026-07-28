@@ -759,61 +759,7 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
                 </div>
               </div>
 
-              {/* Desktop App Download (Gated) */}
-              {subscription?.plan && subscription.plan !== 'Free Trial' && (
-                <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-                      <Download className="w-4 h-4" /> LIVAFIL Desktop App
-                    </h4>
-                    <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
-                      As a subscriber, you get access to our dedicated Windows desktop app for faster performance.
-                    </p>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => setDesktopModalOpen(true)}
-                    className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" /> Download Desktop App
-                  </button>
-                </div>
-              )}
-
-              {/* DESKTOP APP INFORMATION MODAL */}
-              {desktopModalOpen && (
-                <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                  <div className="bg-white dark:bg-gray-900 max-w-md w-full rounded-2xl p-6 space-y-4 border border-gray-100 dark:border-gray-800 shadow-2xl animate-slideIn">
-                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
-                      <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                        <Download className="w-4 h-4 text-indigo-600" />
-                        LIVAFIL Windows Desktop App
-                      </h4>
-                      <button onClick={() => setDesktopModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                      <p>LIVAFIL includes built-in Electron desktop app support in this repository!</p>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl font-mono text-[11px] space-y-1">
-                        <p className="text-indigo-600 dark:text-indigo-400 font-bold"># Launch local desktop app:</p>
-                        <p>npm run electron:dev</p>
-                        <p className="text-indigo-600 dark:text-indigo-400 font-bold mt-2"># Build Windows setup installer:</p>
-                        <p>npm run electron:build</p>
-                      </div>
-                      <p className="text-[11px] text-gray-400">The installer package will be output to your local build directory <code className="font-bold text-gray-700 dark:text-gray-200">c:/livafil_build</code>.</p>
-                    </div>
-                    <div className="pt-2 flex justify-end">
-                      <button
-                        onClick={() => setDesktopModalOpen(false)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
-                      >
-                        Got it!
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Subscription End */}
 
               {/* Choose Tiers Grid */}
               <div className="space-y-3">

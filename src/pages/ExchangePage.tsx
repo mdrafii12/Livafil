@@ -103,7 +103,7 @@ export default function ExchangePage() {
         currentMedicines, currentBatches, currentCategories, currentPharmacy
       ] = await Promise.all([
         db.getExchangeListings(),
-        db.getNeedMedicines(),
+        db.getNeedMedicines(profile.pharmacy_id),
         db.getExchangeRequests(),
         db.getExchangeActivities(),
         db.getMedicines(),
