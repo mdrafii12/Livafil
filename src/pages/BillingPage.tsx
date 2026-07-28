@@ -1377,7 +1377,7 @@ export default function BillingPage() {
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Quick Barcodes:
                   </span>
-                  {medicines.map(med => (
+                  {medicines.slice(0, 3).map(med => (
                     <button
                       key={med.id}
                       onClick={() => scanShortcut(med.barcode)}
