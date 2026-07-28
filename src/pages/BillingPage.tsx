@@ -1942,81 +1942,121 @@ export default function BillingPage() {
                     const suppliedDays = parseInt(pState.suppliedDays || '30');
                     const remainingDays = Math.max(0, totalDays - suppliedDays);
                     
+                    const totalMonths = Math.max(1, Math.round(totalDays / 30));
+                    const suppliedMonths = Math.max(1, Math.round(suppliedDays / 30));
+                    const remainingMonths = Math.max(0, totalMonths - suppliedMonths);
+
                     const dueDate = new Date();
                     dueDate.setDate(dueDate.getDate() + suppliedDays);
                     const formattedDueDate = dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+                    const handleSelectSuppliedDays = (days: number) => {
+                      const safeDays = Math.max(1, days);
+                      setPrescriptionInputs(prev => ({
+                        ...prev,
+                        [item.medicineId]: {
+                          ...prev[item.medicineId],
+                          suppliedDays: String(safeDays)
+                        }
+                      }));
+                      // Automatically update cart quantity based on daily frequency
+                      const dailyFreq = (item as any).dailyFrequency || 1;
+                      const newQty = Math.min(item.maxQty, dailyFreq * safeDays);
+                      const discountedPrice = item.sellingPrice * (1 - item.discount / 100);
+                      const sub = parseFloat((newQty * discountedPrice * (1 + item.tax / 100)).toFixed(2));
+                      setCart(prevCart => prevCart.map(c => c.batchId === item.batchId ? {
+                        ...c,
+                        quantity: newQty,
+                        subtotal: sub,
+                        daysDispensedToday: safeDays,
+                        remainingPrescribedQuantity: Math.max(0, (item as any).totalPrescribedQuantity || (dailyFreq * totalDays) - newQty)
+                      } : c));
+                    };
+
                     return (
-                      <div key={item.medicineId} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-blue-100 dark:border-blue-800/60 shadow-xs space-y-2.5">
-                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{med?.name}</span>
-                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                            Rx Active
+                      <div key={item.medicineId} className="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-blue-100 dark:border-blue-800/60 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{med?.name}</span>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              {(item as any).dosageSchedule ? `Schedule: ${(item as any).dosageSchedule}` : '1-0-1 After Food'}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                            Prescribed {totalMonths} Mo ({totalDays}d)
                           </span>
                         </div>
 
-                        {(pState as any)?.activePrescription ? (
-                          <div className="space-y-2">
-                            <div className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 p-2 rounded-lg font-medium flex justify-between items-center">
-                              <span>Existing Prescription:</span>
-                              <span className="font-bold">{(pState as any).activePrescription.filledDays} / {(pState as any).activePrescription.totalDurationDays} days filled</span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-600 dark:text-slate-300 font-medium">Days Dispensed Today:</span>
-                              <input 
-                                type="number"
-                                value={pState.suppliedDays}
-                                onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], suppliedDays: e.target.value}}))}
-                                placeholder="30"
-                                className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold"
-                              />
-                            </div>
+                        {/* Quick Duration Selection Palette (1 Month / 2 Months / 3 Months) */}
+                        <div className="space-y-1.5">
+                          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            How many months to dispense today? (Patient Preference):
+                          </label>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[1, 2, 3].filter(m => m * 30 <= Math.max(90, totalDays)).map(m => {
+                              const days = m * 30;
+                              const isSelected = suppliedDays === days;
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() => handleSelectSuppliedDays(days)}
+                                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all border ${
+                                    isSelected
+                                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-800'
+                                  }`}
+                                >
+                                  {m} Month {m === 1 ? '(30d)' : `(${days}d)`}
+                                </button>
+                              );
+                            })}
                           </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-600 dark:text-slate-300 font-medium">Doctor Prescribed Total:</span>
-                              <div className="flex items-center gap-1">
-                                <input 
-                                  type="number"
-                                  value={pState.totalDays}
-                                  onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], totalDays: e.target.value}}))}
-                                  placeholder="90"
-                                  className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold"
-                                />
-                                <span className="text-[10px] text-slate-400 font-semibold">Days</span>
-                              </div>
-                            </div>
+                        </div>
 
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-600 dark:text-slate-300 font-medium">Customer Takes Today:</span>
-                              <div className="flex items-center gap-1">
-                                <input 
-                                  type="number"
-                                  value={pState.suppliedDays}
-                                  onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], suppliedDays: e.target.value}}))}
-                                  placeholder="30"
-                                  className="w-20 bg-slate-50 dark:bg-slate-900 text-right p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs outline-none focus:border-blue-500 font-bold text-emerald-600"
-                                />
-                                <span className="text-[10px] text-slate-400 font-semibold">Days</span>
-                              </div>
-                            </div>
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-bold">Prescribed Total:</span>
+                            <input 
+                              type="number"
+                              value={pState.totalDays}
+                              onChange={(e) => setPrescriptionInputs(prev => ({...prev, [item.medicineId]: {...prev[item.medicineId], totalDays: e.target.value}}))}
+                              className="w-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-bold text-xs"
+                            />
                           </div>
-                        )}
 
-                        {/* Live Refill Calculation Card */}
-                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] space-y-1">
-                          <div className="flex justify-between items-center text-slate-600 dark:text-slate-300 font-semibold">
-                            <span>📅 Next Refill Due Date:</span>
-                            <span className="text-blue-600 dark:text-blue-400 font-extrabold">{formattedDueDate}</span>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-bold">Dispensing Today (Days):</span>
+                            <input 
+                              type="number"
+                              value={pState.suppliedDays}
+                              onChange={(e) => handleSelectSuppliedDays(parseInt(e.target.value) || 30)}
+                              className="w-full bg-slate-50 dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-bold text-xs"
+                            />
                           </div>
-                          <div className="flex justify-between items-center text-slate-500 text-[10px]">
-                            <span>Unfilled Duration Remaining:</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-300">{remainingDays} Days</span>
+                        </div>
+
+                        {/* Live Refill Calculation Summary Card */}
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] space-y-1.5">
+                          <div className="flex justify-between items-center text-slate-700 dark:text-slate-300 font-bold">
+                            <span>Dispensing Today:</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">{suppliedMonths} Month ({suppliedDays} Days) • {item.quantity} units</span>
                           </div>
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                          
+                          {remainingDays > 0 ? (
+                            <div className="flex justify-between items-center text-blue-600 dark:text-blue-400 font-bold border-t border-slate-200 dark:border-slate-800 pt-1">
+                              <span>Refill Reminder Scheduled:</span>
+                              <span>{remainingMonths} Months ({remainingDays} Days) due on {formattedDueDate}</span>
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-400 font-semibold border-t border-slate-200 dark:border-slate-800 pt-1">
+                              Full prescription completed today (No refill needed)
+                            </div>
+                          )}
+
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                             <Send className="w-3 h-3 text-emerald-500" />
-                            Direct sync to Refill Reminders page &amp; WhatsApp queue
+                            Auto-syncs WhatsApp Refill Reminder for remaining {remainingDays > 0 ? `${remainingDays} days` : '0 days'}
                           </div>
                         </div>
                       </div>
