@@ -163,19 +163,7 @@ export default function ExchangePage() {
   // NOTE: only used as a fallback where real contact data isn't captured in the database yet
   // (the outbound "seller contact" case). Inbound buyer contact uses real data directly instead.
   const getPharmacyContact = (pharmacyId: string) => {
-    if (pharmacyId === 'phar-apex') {
-      return { owner: 'Dr. Evelyn Thomas', phone: '+1 (555) 234-8899', email: 'evelyn@apexcare.org', address: '12 Medical Plaza Dr, Suite 3' };
-    }
-    if (pharmacyId === 'phar-beacon') {
-      return { owner: 'Sarah Jenkins, RPh', phone: '+1 (555) 987-6543', email: 'sarah@beaconhealth.com', address: '45 Industrial Pkwy, Chicago, IL' };
-    }
-    if (pharmacyId === 'phar-lifeline') {
-      return { owner: 'Marcus Vance', phone: '+1 (555) 789-0123', email: 'm.vance@lifelinestation.com', address: '777 Recovery Rd, East Sector' };
-    }
-    if (pharmacyId === 'phar-stjude') {
-      return { owner: 'Sister Mary Joseph', phone: '+1 (555) 890-4455', email: 'dispensary@stjudeclinical.org', address: '109 Cathedral Parkway, North Branch' };
-    }
-    return { owner: 'Authorized Pharmacist', phone: '+1 (555) 999-0000', email: 'exchange@livafil-network.net', address: 'Verified Member Location' };
+    return { owner: 'Verified Member Pharmacist', phone: '+91 9876543210', email: 'exchange@pharmacy-network.org', address: 'Verified Pharmacy Location' };
   };
 
   // One-click listing recommendation engine

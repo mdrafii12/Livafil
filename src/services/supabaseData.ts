@@ -1850,56 +1850,7 @@ export async function updateOpConsultationStatus(pharmacyId: string, id: string,
 // ==========================================
 const STORAGE_DOCTORS_KEY = 'livafil_registered_doctors';
 
-const INITIAL_REGISTERED_DOCTORS: RegisteredDoctor[] = [
-  {
-    id: 'doc-101',
-    pharmacyId: 'default-pharmacy',
-    name: 'Dr. A. K. Sharma',
-    qualification: 'MBBS, MD (General Medicine)',
-    specialty: 'General Physician',
-    phone: '9876543210',
-    email: 'dr.sharma@livafil.com',
-    regNumber: 'MCI-49201',
-    consultationFee: 500,
-    roomNumber: 'Cabin 101',
-    availabilityDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    timingSlots: '09:00 AM - 01:00 PM, 05:00 PM - 09:00 PM',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'doc-102',
-    pharmacyId: 'default-pharmacy',
-    name: 'Dr. Priya Patel',
-    qualification: 'MBBS, DCH (Pediatrics)',
-    specialty: 'Pediatric Specialist',
-    phone: '9812345678',
-    email: 'dr.priya@livafil.com',
-    regNumber: 'MCI-38102',
-    consultationFee: 600,
-    roomNumber: 'Cabin 104',
-    availabilityDays: ['Mon', 'Wed', 'Fri', 'Sat'],
-    timingSlots: '10:00 AM - 02:00 PM, 04:00 PM - 08:00 PM',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'doc-103',
-    pharmacyId: 'default-pharmacy',
-    name: 'Dr. Rajesh Reddy',
-    qualification: 'MBBS, DM (Cardiology)',
-    specialty: 'Cardiologist & Internal Med',
-    phone: '9765432109',
-    email: 'dr.rajesh@livafil.com',
-    regNumber: 'MCI-51920',
-    consultationFee: 800,
-    roomNumber: 'Cabin 201',
-    availabilityDays: ['Tue', 'Thu', 'Sat'],
-    timingSlots: '11:00 AM - 04:00 PM',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  }
-];
+const INITIAL_REGISTERED_DOCTORS: RegisteredDoctor[] = [];
 
 export async function getRegisteredDoctors(pharmacyId: string): Promise<RegisteredDoctor[]> {
   try {
