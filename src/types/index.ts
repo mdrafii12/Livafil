@@ -383,8 +383,22 @@ export interface OpPrescriptionItem {
   medicineName: string;
   dosage: string; // e.g. "1-0-1 After Food"
   durationDays: number;
-  quantity: number;
+  quantity: number; // total prescribed quantity
   notes?: string;
+  durationValue?: number; // e.g. 3
+  durationUnit?: 'days' | 'months'; // e.g. 'months'
+  timing?: {
+    morning: boolean;
+    afternoon: boolean;
+    evening: boolean;
+  };
+  dosagePerTiming?: {
+    morning: number;
+    afternoon: number;
+    evening: number;
+  };
+  dailyFrequency?: number; // e.g. 2 tablets/day
+  totalPrescribedQuantity?: number; // e.g. 180 tablets
 }
 
 export type OpConsultationStatus = 'Waiting' | 'Consulting' | 'Completed' | 'Sent to POS';

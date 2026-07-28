@@ -1663,7 +1663,7 @@ export default function BillingPage() {
                                       setCustomerName(p.name);
                                       setCustomerPhone(p.phone);
                                       setShowPatientDropdown(false);
-                                      // Load OPD medicines into cart
+                                      // Load OPD medicines into cart with timing-based duration calculations
                                       if (consultation.medicines.length > 0) {
                                         let addedCount = 0;
                                         consultation.medicines.forEach(item => {
@@ -1671,12 +1671,20 @@ export default function BillingPage() {
                                           if (med) {
                                             const validBatch = batches.find(b => b.medicineId === med.id && b.quantity > 0);
                                             if (validBatch) {
+                                              const totalDays = item.durationDays || (item.durationUnit === 'months' ? (item.durationValue || 3) * 30 : (item.durationValue || 30));
+                                              const dailyFreq = item.dailyFrequency || 1;
+                                              const totalPrescribedQty = item.totalPrescribedQuantity || item.quantity || (dailyFreq * totalDays);
+
+                                              // Default days dispensed today: 30 days if prescribed >= 30d, else totalDays
+                                              const daysDispensedToday = totalDays >= 30 ? 30 : totalDays;
+                                              const qtyToDispenseToday = Math.min(validBatch.quantity, dailyFreq * daysDispensedToday);
+
+                                              const discountedPrice = validBatch.sellingPrice;
+                                              const taxRate = 12;
+                                              const sub = parseFloat((qtyToDispenseToday * discountedPrice * (1 + taxRate / 100)).toFixed(2));
+
                                               setCart(prev => {
                                                 if (prev.some(c => c.batchId === validBatch.id)) return prev;
-                                                const discountedPrice = validBatch.sellingPrice;
-                                                const taxRate = 12;
-                                                const qty = item.quantity || 10;
-                                                const sub = parseFloat((qty * discountedPrice * (1 + taxRate / 100)).toFixed(2));
                                                 return [...prev, {
                                                   id: 'bi_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
                                                   billId: '',
@@ -1684,22 +1692,40 @@ export default function BillingPage() {
                                                   batchId: validBatch.id,
                                                   medicineName: med.name,
                                                   batchNumber: validBatch.batchNumber,
-                                                  quantity: qty,
+                                                  quantity: qtyToDispenseToday,
                                                   mrp: validBatch.mrp,
                                                   sellingPrice: validBatch.sellingPrice,
                                                   discount: 0,
                                                   tax: taxRate,
                                                   subtotal: sub,
                                                   maxQty: validBatch.quantity,
-                                                  expDate: validBatch.expiryDate
+                                                  expDate: validBatch.expiryDate,
+                                                  dailyFrequency: dailyFreq,
+                                                  totalPrescribedDays: totalDays,
+                                                  daysDispensedToday: daysDispensedToday,
+                                                  totalPrescribedQuantity: totalPrescribedQty,
+                                                  remainingPrescribedQuantity: Math.max(0, totalPrescribedQty - qtyToDispenseToday),
+                                                  dosageSchedule: item.dosage
                                                 }];
                                               });
+
+                                              setPrescriptionInputs(prev => ({
+                                                ...prev,
+                                                [med.id]: {
+                                                  totalDays: String(totalDays),
+                                                  suppliedDays: String(daysDispensedToday),
+                                                  loaded: true,
+                                                  phone: p.phone
+                                                }
+                                              }));
+
                                               addedCount++;
                                             }
                                           }
                                         });
+
                                         if (addedCount > 0) {
-                                          showToast('success', `Loaded ${addedCount} prescribed medicines into billing cart!`);
+                                          showToast('success', `Loaded ${addedCount} OPD prescribed medicines into billing cart with calculated timing quantities!`);
                                         } else {
                                           showToast('error', 'Medicines in prescription could not be matched to in-stock batches.');
                                         }

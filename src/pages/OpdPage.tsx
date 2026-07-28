@@ -67,6 +67,10 @@ export default function OpdPage() {
   const [selectedMedId, setSelectedMedId] = useState('');
   const [dosage, setDosage] = useState('1-0-1 After Food');
   const [durationDays, setDurationDays] = useState(5);
+  const [durationValue, setDurationValue] = useState<number>(3);
+  const [durationUnit, setDurationUnit] = useState<'days' | 'months'>('months');
+  const [timing, setTiming] = useState({ morning: true, afternoon: false, evening: true });
+  const [dosagePerTiming, setDosagePerTiming] = useState({ morning: 1, afternoon: 1, evening: 1 });
   const [qty, setQty] = useState(10);
   const [rxNotes, setRxNotes] = useState('');
 
@@ -180,7 +184,7 @@ export default function OpdPage() {
     }
   };
 
-  // 2. Add Drug to Prescription
+  // 2. Add Drug to Prescription (Stage 1 Duration & Timing Engine)
   const handleAddMedicineToRx = () => {
     if (!selectedMedId) {
       showToast('error', 'Please select a medicine from inventory.');
@@ -189,29 +193,45 @@ export default function OpdPage() {
     const med = medicines.find(m => m.id === selectedMedId);
     if (!med) return;
 
-    // Avoid duplicates
     if (rxItems.some(item => item.medicineId === selectedMedId)) {
       showToast('error', `${med.name} is already in the prescription.`);
       return;
     }
+
+    const totalDays = durationUnit === 'months' ? (durationValue * 30) : durationValue;
+    const dailyFreq = (timing.morning ? (dosagePerTiming.morning || 1) : 0) +
+                      (timing.afternoon ? (dosagePerTiming.afternoon || 1) : 0) +
+                      (timing.evening ? (dosagePerTiming.evening || 1) : 0);
+    const calculatedTotalQty = Math.max(1, dailyFreq * totalDays);
+
+    const timingStr = [
+      timing.morning ? `Morning (${dosagePerTiming.morning || 1})` : null,
+      timing.afternoon ? `Afternoon (${dosagePerTiming.afternoon || 1})` : null,
+      timing.evening ? `Evening (${dosagePerTiming.evening || 1})` : null
+    ].filter(Boolean).join(', ');
+
+    const formattedDosage = timingStr ? `${timingStr}` : dosage;
 
     setRxItems(prev => [
       ...prev,
       {
         medicineId: med.id,
         medicineName: `${med.name} (${med.strength})`,
-        dosage,
-        durationDays: Number(durationDays) || 5,
-        quantity: Number(qty) || 10,
+        dosage: formattedDosage,
+        durationDays: totalDays,
+        quantity: calculatedTotalQty,
+        durationValue,
+        durationUnit,
+        timing,
+        dosagePerTiming,
+        dailyFrequency: dailyFreq,
+        totalPrescribedQuantity: calculatedTotalQty,
         notes: rxNotes
       }
     ]);
 
     // Reset drug picker
     setSelectedMedId('');
-    setDosage('1-0-1 After Food');
-    setDurationDays(5);
-    setQty(10);
     setRxNotes('');
   };
 
@@ -417,17 +437,23 @@ export default function OpdPage() {
       y += 6;
 
       if (c.medicines && c.medicines.length > 0) {
-        const tableData = c.medicines.map((m, idx) => [
-          idx + 1,
-          m.medicineName,
-          m.dosage,
-          `${m.durationDays} Days`,
-          `${m.quantity} units`
-        ]);
+        const tableData = c.medicines.map((m, idx) => {
+          const durationStr = m.durationValue && m.durationUnit 
+            ? `${m.durationValue} ${m.durationUnit.charAt(0).toUpperCase() + m.durationUnit.slice(1)}` 
+            : `${m.durationDays} Days`;
+          const totalQtyStr = `${m.totalPrescribedQuantity || m.quantity} units`;
+          return [
+            idx + 1,
+            m.medicineName,
+            m.dosage || '1-0-1 After Food',
+            durationStr,
+            totalQtyStr
+          ];
+        });
 
         autoTable(doc, {
           startY: y,
-          head: [['#', 'Medicine Name', 'Dosage Schedule', 'Duration', 'Qty']],
+          head: [['#', 'Medicine Name', 'Dosage & Timing Schedule', 'Duration', 'Prescribed Qty']],
           body: tableData,
           theme: 'striped',
           headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -907,19 +933,21 @@ export default function OpdPage() {
               </div>
 
               {/* Add Drug Selector Row */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
-                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Pill className="w-3.5 h-3.5 text-blue-500" /> Prescribe Drug from Inventory
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-4">
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                  <span className="flex items-center gap-1.5"><Pill className="w-3.5 h-3.5 text-blue-500" /> Prescribe Drug from Inventory</span>
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full">Stage 1 e-Prescription Pad</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                  <div className="md:col-span-7">
+                    <label className="block text-[10px] font-bold text-slate-400 mb-1">Select Medicine *</label>
                     <select 
                       value={selectedMedId}
                       onChange={(e) => setSelectedMedId(e.target.value)}
-                      className="w-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
+                      className="w-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
                     >
-                      <option value="">-- Select Medicine --</option>
+                      <option value="">-- Search / Select Medicine --</option>
                       {medicines.map(m => (
                         <option key={m.id} value={m.id}>
                           {m.name} ({m.strength}) - {m.dosageForm}
@@ -927,40 +955,136 @@ export default function OpdPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <input 
-                      type="text"
-                      value={dosage}
-                      onChange={(e) => setDosage(e.target.value)}
-                      placeholder="Dosage (e.g. 1-0-1)"
-                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
-                    />
+
+                  <div className="md:col-span-5">
+                    <label className="block text-[10px] font-bold text-slate-400 mb-1">Prescribed Duration *</label>
+                    <div className="flex items-center gap-1">
+                      <input 
+                        type="number"
+                        min="1"
+                        value={durationValue}
+                        onChange={(e) => setDurationValue(Math.max(1, Number(e.target.value)))}
+                        className="w-20 text-xs font-bold text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
+                      />
+                      <select
+                        value={durationUnit}
+                        onChange={(e) => setDurationUnit(e.target.value as any)}
+                        className="flex-1 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
+                      >
+                        <option value="months">Months (30d/mo)</option>
+                        <option value="days">Days</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400">Duration (Days)</label>
-                    <input 
-                      type="number"
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
-                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
-                    />
+                {/* Timing Toggles (Morning / Afternoon / Evening) & Dosage */}
+                <div className="space-y-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Daily Timing Schedule &amp; Dosage per Timing
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Morning */}
+                    <div className={`p-2 rounded-lg border text-xs flex flex-col gap-1 transition-all ${
+                      timing.morning ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400'
+                    }`}>
+                      <label className="flex items-center gap-1.5 cursor-pointer font-bold select-none">
+                        <input 
+                          type="checkbox"
+                          checked={timing.morning}
+                          onChange={(e) => setTiming({ ...timing, morning: e.target.checked })}
+                          className="rounded text-amber-500 focus:ring-amber-400"
+                        />
+                        <span>🌅 Morning</span>
+                      </label>
+                      {timing.morning && (
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-amber-200 dark:border-amber-900/40">
+                          <span>Dosage:</span>
+                          <input 
+                            type="number"
+                            min="1"
+                            value={dosagePerTiming.morning}
+                            onChange={(e) => setDosagePerTiming({ ...dosagePerTiming, morning: Math.max(1, Number(e.target.value)) })}
+                            className="w-12 text-center p-0.5 bg-white dark:bg-slate-950 border border-amber-300 rounded font-bold"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Afternoon */}
+                    <div className={`p-2 rounded-lg border text-xs flex flex-col gap-1 transition-all ${
+                      timing.afternoon ? 'bg-blue-500/10 border-blue-500/40 text-blue-900 dark:text-blue-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400'
+                    }`}>
+                      <label className="flex items-center gap-1.5 cursor-pointer font-bold select-none">
+                        <input 
+                          type="checkbox"
+                          checked={timing.afternoon}
+                          onChange={(e) => setTiming({ ...timing, afternoon: e.target.checked })}
+                          className="rounded text-blue-500 focus:ring-blue-400"
+                        />
+                        <span>☀️ Afternoon</span>
+                      </label>
+                      {timing.afternoon && (
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-blue-200 dark:border-blue-900/40">
+                          <span>Dosage:</span>
+                          <input 
+                            type="number"
+                            min="1"
+                            value={dosagePerTiming.afternoon}
+                            onChange={(e) => setDosagePerTiming({ ...dosagePerTiming, afternoon: Math.max(1, Number(e.target.value)) })}
+                            className="w-12 text-center p-0.5 bg-white dark:bg-slate-950 border border-blue-300 rounded font-bold"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Evening */}
+                    <div className={`p-2 rounded-lg border text-xs flex flex-col gap-1 transition-all ${
+                      timing.evening ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-900 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400'
+                    }`}>
+                      <label className="flex items-center gap-1.5 cursor-pointer font-bold select-none">
+                        <input 
+                          type="checkbox"
+                          checked={timing.evening}
+                          onChange={(e) => setTiming({ ...timing, evening: e.target.checked })}
+                          className="rounded text-indigo-500 focus:ring-indigo-400"
+                        />
+                        <span>🌙 Evening</span>
+                      </label>
+                      {timing.evening && (
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-indigo-200 dark:border-indigo-900/40">
+                          <span>Dosage:</span>
+                          <input 
+                            type="number"
+                            min="1"
+                            value={dosagePerTiming.evening}
+                            onChange={(e) => setDosagePerTiming({ ...dosagePerTiming, evening: Math.max(1, Number(e.target.value)) })}
+                            className="w-12 text-center p-0.5 bg-white dark:bg-slate-950 border border-indigo-300 rounded font-bold"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400">Total Qty</label>
-                    <input 
-                      type="number"
-                      value={qty}
-                      onChange={(e) => setQty(Number(e.target.value))}
-                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 dark:text-white"
-                    />
+                </div>
+
+                {/* Calculation Summary Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+                  <div className="text-slate-600 dark:text-slate-300 font-medium">
+                    Calculated Frequency: <strong className="text-slate-900 dark:text-white">
+                      {(timing.morning ? dosagePerTiming.morning : 0) + (timing.afternoon ? dosagePerTiming.afternoon : 0) + (timing.evening ? dosagePerTiming.evening : 0)} / day
+                    </strong>
+                    <span className="text-slate-400 ml-2">({durationUnit === 'months' ? durationValue * 30 : durationValue} Days Total)</span>
                   </div>
-                  <div className="flex items-end">
+
+                  <div className="flex items-center gap-3">
+                    <span className="font-extrabold text-blue-600 dark:text-blue-400">
+                      Total Prescribed: {((timing.morning ? dosagePerTiming.morning : 0) + (timing.afternoon ? dosagePerTiming.afternoon : 0) + (timing.evening ? dosagePerTiming.evening : 0)) * (durationUnit === 'months' ? durationValue * 30 : durationValue)} Units
+                    </span>
+
                     <button 
+                      type="button"
                       onClick={handleAddMedicineToRx}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shadow-sm flex items-center gap-1 shrink-0"
                     >
                       <Plus className="w-4 h-4" /> Add Drug
                     </button>

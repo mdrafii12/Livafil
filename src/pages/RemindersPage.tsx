@@ -45,10 +45,11 @@ export default function RemindersPage() {
     try {
       const p = r.prescriptionId ? prescriptions.find(x => x.id === r.prescriptionId) : null;
       const pharmacyName = myPharmacy?.name || 'our pharmacy';
-      const fillProgress = p ? ` (${p.filledDays}/${p.totalDurationDays} days filled)` : '';
+      const daysFilledStr = r.daysSuppliedThisFill ? `${r.daysSuppliedThisFill} days filled` : (p ? `${p.filledDays}/${p.totalDurationDays} days filled` : 'current supply');
       const formattedDate = new Date(r.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
       
-      const message = `Hi ${r.customerName}, your ${r.medicineName} refill${fillProgress} is due on ${formattedDate}. Reply to reorder or visit ${pharmacyName}.`;
+      // TODO: WHATSAPP - send refill reminder message (Actual WhatsApp Business API integration needs to be set up separately with real credentials)
+      const message = `Hi ${r.customerName}, your ${r.medicineName} supply (${daysFilledStr}) is ending soon. Visit ${pharmacyName} before ${formattedDate} for a refill.`;
       
       // Update status in DB
       await db.updateReminderStatus(r.id, 'Sent');
