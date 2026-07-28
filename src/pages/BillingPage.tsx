@@ -248,19 +248,42 @@ export default function BillingPage() {
   // -------------------------------------------------------------
   // MEDICINE & BARCODE SEARCH LOGIC
   // -------------------------------------------------------------
+  // DEBOUNCED AUTOCOMPLETE MEDICINE SEARCH (TOP 2-3 MATCHES)
+  // -------------------------------------------------------------
   useEffect(() => {
-    if (searchQuery.trim().length >= 2) {
-      const q = searchQuery.toLowerCase();
-      const results = medicines.filter(m => 
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const q = searchQuery.toLowerCase().trim();
+      
+      const filtered = medicines.filter(m => 
         m.name.toLowerCase().includes(q) || 
         m.genericName.toLowerCase().includes(q) || 
         m.barcode.includes(q) || 
         m.manufacturer.toLowerCase().includes(q)
       );
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
+
+      // Sort by relevance (exact prefix matches first)
+      const sorted = filtered.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        const aPrefix = aName.startsWith(q);
+        const bPrefix = bName.startsWith(q);
+        if (aPrefix && !bPrefix) return -1;
+        if (!aPrefix && bPrefix) return 1;
+
+        return aName.localeCompare(bName);
+      });
+
+      // Limit suggestions to TOP 3 closest matching results
+      setSearchResults(sorted.slice(0, 3));
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, [searchQuery, medicines]);
 
   const handleSelectMedicine = (med: Medicine) => {

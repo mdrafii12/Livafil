@@ -211,24 +211,30 @@ export default function MedicinesPage() {
   // CRUD Operations
   const handleOpenAdd = () => {
     setEditingMed(null);
+
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    const defaultExpiry = futureDate.toISOString().split('T')[0];
+    const defaultBatch = `BATCH-${Math.floor(1000 + Math.random() * 9000)}`;
+
     reset({
       name: '',
       genericName: '',
       manufacturer: '',
       strength: '',
       dosageForm: 'Tablet',
-      barcode: '',
-      categoryId: '',
+      barcode: `890${Math.floor(100000000 + Math.random() * 900000000)}`,
+      categoryId: categories[0]?.id || '',
       prescriptionRequired: false,
       refillIntervalDays: null,
-      addInitialStock: false,
-      batchNumber: '',
-      quantity: null,
-      purchasePrice: null,
-      sellingPrice: null,
-      mrp: null,
-      supplierId: '',
-      expiryDate: ''
+      addInitialStock: true,
+      batchNumber: defaultBatch,
+      quantity: 100 as any,
+      purchasePrice: 50 as any,
+      mrp: 80 as any,
+      sellingPrice: 75 as any,
+      supplierId: suppliers[0]?.id || '',
+      expiryDate: defaultExpiry
     });
     setFormOpen(true);
   };
@@ -268,23 +274,32 @@ export default function MedicinesPage() {
         showNotification('success', `Medicine "${data.name}" updated successfully.`);
       } else {
         const newMed = await db.addMedicine(profile.pharmacy_id, medData);
-        if (data.addInitialStock && data.batchNumber && data.quantity && data.supplierId && data.expiryDate) {
-          await db.addBatch(profile.pharmacy_id, profile.id, {
-            medicineId: newMed.id,
-            batchNumber: data.batchNumber,
-            quantity: Number(data.quantity),
-            purchasePrice: Number(data.purchasePrice) || 0,
-            sellingPrice: Number(data.sellingPrice) || 0,
-            mrp: Number(data.mrp) || 0,
-            expiryDate: data.expiryDate,
-            manufactureDate: '',
-            receivedDate: new Date().toISOString().split('T')[0],
-            supplierId: data.supplierId,
-            minimumStock: 10,
-            notes: 'Initial stock added during medicine creation'
-          });
-        }
-        showNotification('success', `Medicine "${data.name}" added successfully.`);
+        
+        // Always create first inventory batch when adding a new medicine to guarantee immediate in-stock visibility
+        const batchNum = data.batchNumber || `BATCH-${Math.floor(1000 + Math.random() * 9000)}`;
+        const batchQty = Number(data.quantity) > 0 ? Number(data.quantity) : 100;
+        const purchasePx = Number(data.purchasePrice) || 50;
+        const mrpPx = Number(data.mrp) || 80;
+        const sellPx = Number(data.sellingPrice) || 75;
+        const expDt = data.expiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0];
+        const suppId = data.supplierId || suppliers[0]?.id || '';
+
+        await db.addBatch(profile.pharmacy_id, profile.id, {
+          medicineId: newMed.id,
+          batchNumber: batchNum,
+          quantity: batchQty,
+          purchasePrice: purchasePx,
+          sellingPrice: sellPx,
+          mrp: mrpPx,
+          expiryDate: expDt,
+          manufactureDate: '',
+          receivedDate: new Date().toISOString().split('T')[0],
+          supplierId: suppId,
+          minimumStock: 10,
+          notes: 'Initial stock added during medicine creation'
+        });
+
+        showNotification('success', `Medicine "${data.name}" added with ${batchQty} units initial stock.`);
       }
       await refreshData();
       setFormOpen(false);
