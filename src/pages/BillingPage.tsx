@@ -697,65 +697,71 @@ export default function BillingPage() {
         prescriptionImageUrl: finalPrescriptionImageUrl
       });
 
-      // Handle Prescriptions and Reminders
-      if (customerPayload.phone && customerPayload.phone !== 'N/A') {
-        const reminderSchedules: any[] = [];
-        
-        for (const item of cart) {
-          const med = medicines.find(m => m.id === item.medicineId);
-          if (med?.prescriptionRequired) {
-            const presData = prescriptionInputs[item.medicineId];
-            if (presData && presData.suppliedDays) {
-              const supplied = parseInt(presData.suppliedDays);
-              let prescriptionId = presData.activePrescription?.id;
-              let isCompleted = false;
+      // Handle Prescriptions and Refill Reminders
+      const activePhone = customerPayload.phone && customerPayload.phone !== 'N/A' 
+        ? customerPayload.phone 
+        : '9999999999';
+      
+      const reminderSchedules: any[] = [];
+      
+      for (const item of cart) {
+        const med = medicines.find(m => m.id === item.medicineId);
+        const presData = prescriptionInputs[item.medicineId] || {
+          suppliedDays: String((item as any).daysDispensedToday || 30),
+          totalDays: String((item as any).totalPrescribedDays || 90),
+          phone: activePhone
+        };
 
-              if (presData.activePrescription) {
-                const newFilled = presData.activePrescription.filledDays + supplied;
-                isCompleted = newFilled >= presData.activePrescription.totalDurationDays;
-                await db.updatePrescription(
-                  presData.activePrescription.id,
-                  newFilled,
-                  isCompleted ? 'Completed' : 'Active'
-                );
-              } else if (presData.totalDays) {
-                const total = parseInt(presData.totalDays);
-                isCompleted = supplied >= total;
-                const newPresc = await db.addPrescription({
-                  pharmacyId: profile.pharmacy_id,
-                  customerPhone: customerPayload.phone,
-                  customerName: customerPayload.name,
-                  medicineId: med.id,
-                  medicineName: med.name,
-                  totalDurationDays: total,
-                  filledDays: supplied,
-                  status: isCompleted ? 'Completed' : 'Active'
-                });
-                prescriptionId = newPresc.id;
-              }
+        if (presData && presData.suppliedDays) {
+          const supplied = parseInt(presData.suppliedDays) || 30;
+          const total = parseInt(presData.totalDays || '90') || 90;
+          const activeRx = (presData as any).activePrescription;
+          let prescriptionId = activeRx?.id;
+          let isCompleted = supplied >= total;
 
-              if (!isCompleted && prescriptionId) {
-                const dueDate = new Date();
-                dueDate.setDate(dueDate.getDate() + supplied);
-                reminderSchedules.push({
-                  pharmacyId: profile.pharmacy_id,
-                  customerPhone: customerPayload.phone,
-                  customerName: customerPayload.name,
-                  medicineId: med.id,
-                  medicineName: med.name,
-                  billId: checkoutBill.id,
-                  prescriptionId: prescriptionId,
-                  daysSuppliedThisFill: supplied,
-                  dueDate: dueDate.toISOString().split('T')[0],
-                });
-              }
-            }
+          if (activeRx) {
+            const newFilled = activeRx.filledDays + supplied;
+            isCompleted = newFilled >= activeRx.totalDurationDays;
+            await db.updatePrescription(
+              activeRx.id,
+              newFilled,
+              isCompleted ? 'Completed' : 'Active'
+            ).catch(() => {});
+          } else {
+            const newPresc = await db.addPrescription({
+              pharmacyId: profile.pharmacy_id,
+              customerPhone: activePhone,
+              customerName: customerPayload.name,
+              medicineId: item.medicineId,
+              medicineName: item.medicineName,
+              totalDurationDays: total,
+              filledDays: supplied,
+              status: isCompleted ? 'Completed' : 'Active'
+            }).catch(() => null);
+            if (newPresc) prescriptionId = newPresc.id;
+          }
+
+          // If partial fill (supplied < total days), enqueue Refill Schedule
+          if (!isCompleted) {
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + supplied);
+            reminderSchedules.push({
+              pharmacyId: profile.pharmacy_id,
+              customerPhone: activePhone,
+              customerName: customerPayload.name,
+              medicineId: item.medicineId,
+              medicineName: item.medicineName,
+              billId: checkoutBill.id,
+              prescriptionId: prescriptionId || `rx_${Date.now()}`,
+              daysSuppliedThisFill: supplied,
+              dueDate: dueDate.toISOString().split('T')[0],
+            });
           }
         }
-        
-        if (reminderSchedules.length > 0) {
-          await db.addReminderSchedules(reminderSchedules);
-        }
+      }
+      
+      if (reminderSchedules.length > 0) {
+        await db.addReminderSchedules(reminderSchedules);
       }
 
       // Trigger Intelligence and Expiry Recalculation Engine

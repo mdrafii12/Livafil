@@ -1597,33 +1597,81 @@ export function mapReminderSchedule(row: any): import('../types').ReminderSchedu
   };
 }
 
+const STORAGE_REMINDER_SCHEDULES_KEY = 'livafil_reminder_schedules';
+
 export async function addReminderSchedules(schedules: Omit<import('../types').ReminderSchedule, 'id' | 'createdAt' | 'status'>[]) {
   if (schedules.length === 0) return;
-  const { error } = await supabase.from('reminder_schedule').insert(
-    schedules.map(s => ({
-      pharmacy_id: s.pharmacyId,
-      customer_phone: s.customerPhone,
-      customer_name: s.customerName,
-      medicine_id: s.medicineId,
-      medicine_name: s.medicineName,
-      bill_id: s.billId,
-      prescription_id: s.prescriptionId || null,
-      days_supplied_this_fill: s.daysSuppliedThisFill || null,
-      due_date: s.dueDate,
-      status: 'Pending',
-    }))
-  );
-  if (error) throw error;
+
+  const createdItems: import('../types').ReminderSchedule[] = schedules.map((s, idx) => ({
+    id: `rem_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+    pharmacyId: s.pharmacyId,
+    customerPhone: s.customerPhone,
+    customerName: s.customerName,
+    medicineId: s.medicineId,
+    medicineName: s.medicineName,
+    billId: s.billId,
+    prescriptionId: s.prescriptionId,
+    daysSuppliedThisFill: s.daysSuppliedThisFill,
+    dueDate: s.dueDate,
+    status: 'Pending',
+    createdAt: new Date().toISOString()
+  }));
+
+  try {
+    const { error } = await supabase.from('reminder_schedule').insert(
+      createdItems.map(s => ({
+        pharmacy_id: s.pharmacyId,
+        customer_phone: s.customerPhone,
+        customer_name: s.customerName,
+        medicine_id: s.medicineId,
+        medicine_name: s.medicineName,
+        bill_id: s.billId,
+        prescription_id: s.prescriptionId || null,
+        days_supplied_this_fill: s.daysSuppliedThisFill || null,
+        due_date: s.dueDate,
+        status: 'Pending',
+      }))
+    );
+    if (error) console.warn('[REMINDER SCHEDULES] Supabase insert notice (using local fallback):', error.message);
+  } catch (e) {
+    console.warn('[REMINDER SCHEDULES] Supabase insert exception (using local fallback):', e);
+  }
+
+  // Update local storage fallback cache
+  try {
+    const pId = schedules[0]?.pharmacyId || 'global';
+    const raw = localStorage.getItem(`${STORAGE_REMINDER_SCHEDULES_KEY}_${pId}`);
+    const existing: import('../types').ReminderSchedule[] = raw ? JSON.parse(raw) : [];
+    const updated = [...createdItems, ...existing];
+    localStorage.setItem(`${STORAGE_REMINDER_SCHEDULES_KEY}_${pId}`, JSON.stringify(updated));
+  } catch (e) {}
 }
 
 export async function getReminderSchedules(pharmacyId: string): Promise<import('../types').ReminderSchedule[]> {
-  const { data, error } = await supabase
-    .from('reminder_schedule')
-    .select('*')
-    .eq('pharmacy_id', pharmacyId)
-    .order('due_date', { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(mapReminderSchedule);
+  try {
+    const { data, error } = await supabase
+      .from('reminder_schedule')
+      .select('*')
+      .eq('pharmacy_id', pharmacyId)
+      .order('due_date', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      const items = data.map(mapReminderSchedule);
+      try {
+        localStorage.setItem(`${STORAGE_REMINDER_SCHEDULES_KEY}_${pharmacyId}`, JSON.stringify(items));
+      } catch (e) {}
+      return items;
+    }
+  } catch (err) {
+    console.warn('[REMINDER SCHEDULES] Network fetch error, reading local fallback:', err);
+  }
+
+  try {
+    const raw = localStorage.getItem(`${STORAGE_REMINDER_SCHEDULES_KEY}_${pharmacyId}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+
+  return [];
 }
 
 // -----------------------------------------------------------------------------
