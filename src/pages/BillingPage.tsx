@@ -119,9 +119,7 @@ export default function BillingPage() {
 
   // Load Initial DB States
   const loadDBState = async () => {
-    if (!profile?.pharmacy_id) return;
-
-    if (isOnline) {
+    if (isOnline && profile?.pharmacy_id) {
       try {
         const [m, b, c, bl, p, patientsData, consultationsData] = await Promise.all([
           db.getMedicines(),
@@ -153,20 +151,22 @@ export default function BillingPage() {
   };
 
   const loadFromCache = async () => {
-    if (!profile?.pharmacy_id) return;
-    const cache = await getMedicinesCache(profile.pharmacy_id);
-    if (cache && cache.data && cache.data.medicines.length > 0) {
+    const targetPharmacyId = profile?.pharmacy_id || 'default-pharmacy';
+    const cache = await getMedicinesCache(targetPharmacyId);
+    if (cache && cache.data && cache.data.medicines && cache.data.medicines.length > 0) {
+      console.log(`[BILLING OFFLINE READ] Successfully loaded ${cache.data.medicines.length} medicines and ${cache.data.batches.length} batches from cache for Billing dropdown.`);
       setMedicines(cache.data.medicines);
-      setBatches(cache.data.batches);
+      setBatches(cache.data.batches || []);
       setIsOfflineCacheEmpty(false);
     } else {
+      console.warn('[BILLING OFFLINE READ] No medicines found in IndexedDB cache.');
       setIsOfflineCacheEmpty(true);
     }
   };
 
   useEffect(() => {
     loadDBState();
-  }, [profile, isOnline]);
+  }, [profile?.pharmacy_id, isOnline]);
 
   // Effect to load active prescriptions when cart or customer phone changes
   useEffect(() => {

@@ -91,10 +91,9 @@ export default function OpdPage() {
   const [isOfflineCacheEmpty, setIsOfflineCacheEmpty] = useState(false);
 
   const loadData = async () => {
-    if (!profile?.pharmacy_id) return;
     setLoading(true);
 
-    if (isOnline) {
+    if (isOnline && profile?.pharmacy_id) {
       try {
         const [pData, cData, mData, pharm, docsData, bData] = await Promise.all([
           db.getPatients(profile.pharmacy_id),
@@ -126,12 +125,14 @@ export default function OpdPage() {
   };
 
   const loadFromCache = async () => {
-    if (!profile?.pharmacy_id) return;
-    const cache = await getMedicinesCache(profile.pharmacy_id);
-    if (cache && cache.data && cache.data.medicines.length > 0) {
+    const targetPharmacyId = profile?.pharmacy_id || 'default-pharmacy';
+    const cache = await getMedicinesCache(targetPharmacyId);
+    if (cache && cache.data && cache.data.medicines && cache.data.medicines.length > 0) {
+      console.log(`[OPD OFFLINE READ] Successfully loaded ${cache.data.medicines.length} medicines from cache for OPD dropdown.`);
       setMedicines(cache.data.medicines);
       setIsOfflineCacheEmpty(false);
     } else {
+      console.warn('[OPD OFFLINE READ] No medicines found in IndexedDB cache.');
       setIsOfflineCacheEmpty(true);
     }
   };

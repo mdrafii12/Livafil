@@ -70,37 +70,69 @@ function getDB() {
 // --- MEDICINES CACHE METHODS ---
 
 export async function saveMedicinesCache(
-  pharmacyId: string,
+  pharmacyId: string | undefined,
   data: MedicinesCachePayload
 ): Promise<void> {
   try {
     const db = await getDB();
-    await db.put('medicines_cache', {
-      pharmacyId: pharmacyId || 'default-pharmacy',
+    const targetId = pharmacyId || 'default-pharmacy';
+    const payload = {
+      pharmacyId: targetId,
       timestamp: Date.now(),
-      data,
-    });
+      data: {
+        medicines: data.medicines || [],
+        batches: data.batches || []
+      },
+    };
+    
+    await db.put('medicines_cache', payload);
+
+    // Save fallback copy under 'default-pharmacy' if a specific pharmacyId was provided
+    if (pharmacyId && pharmacyId !== 'default-pharmacy') {
+      await db.put('medicines_cache', {
+        ...payload,
+        pharmacyId: 'default-pharmacy'
+      });
+    }
+
+    console.log(`[MEDICINES CACHE WRITE] Successfully cached ${payload.data.medicines.length} medicines and ${payload.data.batches.length} stock batches to IndexedDB (Keys: '${targetId}', 'default-pharmacy').`, payload.data);
   } catch (err) {
     console.warn('Failed to save medicines cache to IndexedDB:', err);
   }
 }
 
-export async function getMedicinesCache(pharmacyId: string): Promise<{
+export async function getMedicinesCache(pharmacyId?: string): Promise<{
   timestamp: number;
   data: MedicinesCachePayload;
 } | null> {
   try {
     const db = await getDB();
-    const targetId = pharmacyId || 'default-pharmacy';
-    let entry = await db.get('medicines_cache', targetId);
-    if (!entry) {
-      // Fallback lookup for default-pharmacy
+    let entry = pharmacyId ? await db.get('medicines_cache', pharmacyId) : null;
+    
+    if (!entry || !entry.data || !entry.data.medicines || entry.data.medicines.length === 0) {
       entry = await db.get('medicines_cache', 'default-pharmacy');
     }
-    if (!entry) return null;
+    
+    if (!entry || !entry.data || !entry.data.medicines || entry.data.medicines.length === 0) {
+      // Fallback: get most recent entry in object store
+      const allEntries = await db.getAll('medicines_cache');
+      if (allEntries.length > 0) {
+        entry = allEntries[allEntries.length - 1];
+      }
+    }
+
+    if (!entry || !entry.data || !entry.data.medicines) {
+      console.warn('[MEDICINES CACHE READ] No valid medicine cache entry found in IndexedDB medicines_cache store.');
+      return null;
+    }
+
+    console.log(`[MEDICINES CACHE READ] Retrieved ${entry.data.medicines.length} medicines and ${(entry.data.batches || []).length} stock batches from IndexedDB medicines_cache store (Cached at: ${new Date(entry.timestamp).toLocaleTimeString()}).`, entry.data);
     return {
       timestamp: entry.timestamp,
-      data: entry.data,
+      data: {
+        medicines: entry.data.medicines || [],
+        batches: entry.data.batches || []
+      },
     };
   } catch (err) {
     console.warn('Failed to read medicines cache from IndexedDB:', err);
@@ -109,7 +141,7 @@ export async function getMedicinesCache(pharmacyId: string): Promise<{
 }
 
 export async function deductLocalBatchStock(
-  pharmacyId: string,
+  pharmacyId: string | undefined,
   batchId: string,
   quantityToDeduct: number
 ): Promise<void> {
@@ -117,7 +149,7 @@ export async function deductLocalBatchStock(
     const cache = await getMedicinesCache(pharmacyId);
     if (!cache || !cache.data) return;
 
-    const updatedBatches = cache.data.batches.map((b: any) => {
+    const updatedBatches = (cache.data.batches || []).map((b: any) => {
       if (b.id === batchId || (b.batchNumber && b.batchNumber === batchId)) {
         const newQty = Math.max(0, b.quantity - quantityToDeduct);
         return { ...b, quantity: newQty };
@@ -129,6 +161,7 @@ export async function deductLocalBatchStock(
       ...cache.data,
       batches: updatedBatches,
     });
+    console.log(`[MEDICINES CACHE DEDUCTION] Deducted ${quantityToDeduct} units from batch ${batchId}. Updated local cache.`);
   } catch (err) {
     console.warn('Failed to deduct local batch stock in IndexedDB:', err);
   }
