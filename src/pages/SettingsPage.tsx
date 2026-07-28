@@ -6,7 +6,7 @@ import {
   Settings, User, Building2, Eye, Sun, Moon, Key, Shield, 
   CheckCircle2, Loader2, Sparkles, AlertTriangle, CreditCard, 
   Download, Trash2, Smartphone, Calendar, RefreshCw, KeyRound, 
-  Globe, ShieldAlert, ToggleLeft, ToggleRight, Info 
+  Globe, ShieldAlert, ToggleLeft, ToggleRight, Info, X 
 } from 'lucide-react';
 import * as db from '../services/supabaseData';
 import { supabase } from '../lib/supabaseClient';
@@ -62,11 +62,24 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Advanced settings editable states
-  const [expiryThreshold, setExpiryThreshold] = useState<number>(90);
-  const [lowStockAlert, setLowStockAlert] = useState<boolean>(true);
-  const [emailDigest, setEmailDigest] = useState<boolean>(true);
-  const [systemTimezone, setSystemTimezone] = useState<string>('UTC-5');
+  // Advanced settings editable states with localStorage persistence
+  const [expiryThreshold, setExpiryThreshold] = useState<number>(() => {
+    const saved = localStorage.getItem('livafil_advanced_settings');
+    return saved ? JSON.parse(saved).expiryThreshold ?? 90 : 90;
+  });
+  const [lowStockAlert, setLowStockAlert] = useState<boolean>(() => {
+    const saved = localStorage.getItem('livafil_advanced_settings');
+    return saved ? JSON.parse(saved).lowStockAlert ?? true : true;
+  });
+  const [emailDigest, setEmailDigest] = useState<boolean>(() => {
+    const saved = localStorage.getItem('livafil_advanced_settings');
+    return saved ? JSON.parse(saved).emailDigest ?? true : true;
+  });
+  const [systemTimezone, setSystemTimezone] = useState<string>(() => {
+    const saved = localStorage.getItem('livafil_advanced_settings');
+    return saved ? JSON.parse(saved).systemTimezone || 'UTC-5' : 'UTC-5';
+  });
+  const [desktopModalOpen, setDesktopModalOpen] = useState(false);
 
   // Security 2FA state
   const [is2FAEnabled, setIs2FAEnabled] = useState<boolean>(false);
@@ -214,7 +227,13 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
 
   // Advanced settings saving
   const handleSaveAdvanced = () => {
-    showNotification('Advanced alerts and notification threshold configurations saved.');
+    localStorage.setItem('livafil_advanced_settings', JSON.stringify({
+      expiryThreshold,
+      lowStockAlert,
+      emailDigest,
+      systemTimezone,
+    }));
+    showNotification('Advanced alerts and notification threshold configurations saved permanently.');
   };
 
   // Backup downloader mock
@@ -751,13 +770,48 @@ const handleSavePharmacy = async (data: PharmacyFormValues) => {
                       As a subscriber, you get access to our dedicated Windows desktop app for faster performance.
                     </p>
                   </div>
-                  <a 
-                    href="/downloads/LIVAFIL-Setup.exe" 
-                    download="LIVAFIL-Setup.exe"
+                  <button 
+                    type="button"
+                    onClick={() => setDesktopModalOpen(true)}
                     className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-2"
                   >
-                    <Download className="w-4 h-4" /> Download for Windows
-                  </a>
+                    <Download className="w-4 h-4" /> Download Desktop App
+                  </button>
+                </div>
+              )}
+
+              {/* DESKTOP APP INFORMATION MODAL */}
+              {desktopModalOpen && (
+                <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                  <div className="bg-white dark:bg-gray-900 max-w-md w-full rounded-2xl p-6 space-y-4 border border-gray-100 dark:border-gray-800 shadow-2xl animate-slideIn">
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                        <Download className="w-4 h-4 text-indigo-600" />
+                        LIVAFIL Windows Desktop App
+                      </h4>
+                      <button onClick={() => setDesktopModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
+                      <p>LIVAFIL includes built-in Electron desktop app support in this repository!</p>
+                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl font-mono text-[11px] space-y-1">
+                        <p className="text-indigo-600 dark:text-indigo-400 font-bold"># Launch local desktop app:</p>
+                        <p>npm run electron:dev</p>
+                        <p className="text-indigo-600 dark:text-indigo-400 font-bold mt-2"># Build Windows setup installer:</p>
+                        <p>npm run electron:build</p>
+                      </div>
+                      <p className="text-[11px] text-gray-400">The installer package will be output to your local build directory <code className="font-bold text-gray-700 dark:text-gray-200">c:/livafil_build</code>.</p>
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        onClick={() => setDesktopModalOpen(false)}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
+                      >
+                        Got it!
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

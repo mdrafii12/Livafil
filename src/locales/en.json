@@ -1,11 +1,33 @@
 {
   "sidebar": {
     "dashboard": "Dashboard",
-    "billing": "Billing",
-    "medicines": "Medicines",
+    "billing": "Quick Billing",
+    "opd": "Out-Patient (OPD)",
+    "labReports": "Lab & Diagnostics",
+    "refillReminders": "Refill Reminders",
+    "medicines": "Medicines Catalog",
+    "categories": "Drug Categories",
+    "suppliers": "Suppliers",
+    "batches": "Inventory Batches",
+    "movements": "Stock Movements",
+    "recovery": "Recovery Center",
+    "reports": "Reports Audit",
+    "exchange": "Livafil Exchange",
+    "users": "Staff Management",
+    "support": "Support Hub",
     "settings": "Settings",
-    "logout": "Logout",
-    "refillReminders": "Refill Reminders"
+    "logout": "Logout"
+  },
+  "common": {
+    "search": "Search...",
+    "add": "Add New",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "export": "Export",
+    "voiceAgent": "Voice Agent",
+    "home": "Home"
   },
   "dashboard": {
     "overview": "Overview",

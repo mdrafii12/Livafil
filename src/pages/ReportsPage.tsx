@@ -27,6 +27,7 @@ export default function ReportsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dateRange, setDateRange] = useState<'all' | '7days' | '30days' | 'month'>('all');
 
   const { profile } = useAuth();
   const [myPharmacy, setMyPharmacy] = useState<any>(null);
@@ -71,8 +72,9 @@ useEffect(() => {
   const slowMovingItems = IntelligenceService.getSlowMoving(batches, movements, medicines);
   const lowStockItems = IntelligenceService.getLowStock(batches, medicines, suppliers);
   const valueAnalytics = IntelligenceService.getInventoryValueAnalytics(batches, categories, medicines, suppliers);
-  // Filter rows based on search and selected categories/suppliers
+  // Filter rows based on search, category, and date range
   const filterByCommonParams = (list: any[], medicineIdKey: string = 'medicineId') => {
+    const now = new Date();
     return list.filter(item => {
       // Find medicine
       const medId = item[medicineIdKey] || item.id;
@@ -85,7 +87,16 @@ useEffect(() => {
         med.genericName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.batchNumber && item.batchNumber.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      return matchesCategory && matchesSearch;
+      let matchesDate = true;
+      if (dateRange !== 'all' && (item.createdAt || item.created_at)) {
+        const itemDate = new Date(item.createdAt || item.created_at);
+        const diffDays = Math.ceil((now.getTime() - itemDate.getTime()) / (1000 * 3600 * 24));
+        if (dateRange === '7days') matchesDate = diffDays <= 7;
+        else if (dateRange === '30days') matchesDate = diffDays <= 30;
+        else if (dateRange === 'month') matchesDate = itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+      }
+
+      return matchesCategory && matchesSearch && matchesDate;
     });
   };
 
@@ -513,19 +524,35 @@ useEffect(() => {
           />
         </div>
 
-        {/* Right Side: Category selection */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Filter Category:</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent text-xs font-semibold text-slate-600 dark:text-slate-300 min-w-[180px] focus:outline-none"
-          >
-            <option value="all">All Classifications</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+        {/* Right Side: Category and Date Range selection */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Time Window:</label>
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as any)}
+              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent text-xs font-semibold text-slate-600 dark:text-slate-300 focus:outline-none"
+            >
+              <option value="all">All Time</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="month">This Month</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Filter Category:</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent text-xs font-semibold text-slate-600 dark:text-slate-300 min-w-[150px] focus:outline-none"
+            >
+              <option value="all">All Classifications</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           
           <div className="text-[10px] font-bold text-slate-400 italic bg-slate-50 dark:bg-slate-800 px-2.5 py-2 rounded-lg">
             {reportData.length} lines loaded
