@@ -328,12 +328,13 @@ const handleApplyDiscount = async (batchId: string) => {
             </p>
           </div>
         </div>
-        <button 
-          onClick={() => setDesktopModalOpen(true)}
+        <a 
+          href="/downloads/LIVAFIL-Setup.exe"
+          download="LIVAFIL-Setup.exe"
           className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2"
         >
-          <Download className="w-4 h-4" /> Install Desktop App (Windows)
-        </button>
+          <Download className="w-4 h-4" /> Download LIVAFIL-Setup.exe (Windows)
+        </a>
       </div>
 
       {/* DESKTOP APP INSTALLATION MODAL */}
@@ -346,8 +347,8 @@ const handleApplyDiscount = async (batchId: string) => {
                   <Monitor className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Install LIVAFIL Desktop App</h3>
-                  <p className="text-xs text-slate-400">Run LIVAFIL as a native Windows Desktop Application</p>
+                  <h3 className="text-base font-bold text-white">LIVAFIL Desktop Application Setup</h3>
+                  <p className="text-xs text-slate-400">Download native Windows Desktop App executable installer (.exe)</p>
                 </div>
               </div>
               <button 
@@ -361,17 +362,17 @@ const handleApplyDiscount = async (batchId: string) => {
             <div className="space-y-3 text-xs text-slate-300">
               <div className="p-3 bg-blue-950/40 border border-blue-800/60 rounded-xl space-y-1.5">
                 <div className="font-bold text-blue-400 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" /> Recommended 1-Click Desktop Installation:
+                  <Sparkles className="w-4 h-4" /> Direct Windows Executable Installer (.exe):
                 </div>
-                <p>Click the button below to launch Chrome / Edge Native App Installer directly into your Windows desktop and taskbar.</p>
+                <p>Click the button below to download <strong>LIVAFIL-Setup.exe</strong> directly into your Downloads folder. Run the installer to run LIVAFIL as a dedicated desktop application.</p>
               </div>
 
               <div className="space-y-2 pt-2">
-                <div className="font-bold text-slate-200">Manual Browser Installation Steps:</div>
+                <div className="font-bold text-slate-200">Desktop Installation Steps:</div>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-400">
-                  <li>In your browser address bar (Chrome or Microsoft Edge), click the <strong>Install LIVAFIL</strong> icon on the right end of the URL bar.</li>
-                  <li>Alternatively, click browser <strong>Menu (⋮)</strong> $\rightarrow$ <strong>Save &amp; Share</strong> $\rightarrow$ <strong>Install LIVAFIL as App</strong>.</li>
-                  <li>Click <strong>Install</strong> to pin LIVAFIL directly to your Windows Desktop &amp; Start Menu!</li>
+                  <li>Click <strong>Download LIVAFIL-Setup.exe</strong> below.</li>
+                  <li>Open your Downloads folder and run <code>LIVAFIL-Setup.exe</code>.</li>
+                  <li>LIVAFIL will launch instantly as a high-performance Windows desktop application!</li>
                 </ol>
               </div>
             </div>
@@ -383,18 +384,13 @@ const handleApplyDiscount = async (batchId: string) => {
               >
                 Close
               </button>
-              <button
-                onClick={() => {
-                  if ((window as any).deferredPrompt) {
-                    (window as any).deferredPrompt.prompt();
-                  } else {
-                    alert('To install LIVAFIL as a Desktop App: Click the Install icon in your browser URL bar or select Menu (⋮) -> Save and Share -> Install LIVAFIL.');
-                  }
-                }}
+              <a
+                href="/downloads/LIVAFIL-Setup.exe"
+                download="LIVAFIL-Setup.exe"
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
               >
-                <Download className="w-4 h-4" /> Launch Desktop Installer
-              </button>
+                <Download className="w-4 h-4" /> Download LIVAFIL-Setup.exe
+              </a>
             </div>
           </div>
         </div>
