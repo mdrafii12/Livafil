@@ -982,32 +982,24 @@ export default function MedicinesPage() {
 
             <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
               
-              {/* ACTION TOOLBAR & MOCK SIMULATOR */}
+              {/* ACTION TOOLBAR */}
               <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                   <p className="text-xs font-bold text-gray-900 dark:text-white">Upload Supplier Invoice Image / PDF</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Select a bill file to extract via Supabase Edge Function or simulate extraction.</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Select a bill image or PDF to extract medicine details via Gemini AI.</p>
                 </div>
                 <div className="flex items-center space-x-2 shrink-0">
-                  <label className="px-3.5 py-2 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl cursor-pointer flex items-center space-x-1.5 transition-colors">
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>Upload File</span>
+                  <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl cursor-pointer flex items-center space-x-2 shadow-xs transition-all">
+                    {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    <span>{isExtracting ? 'Processing File...' : 'Upload File (Photo / PDF)'}</span>
                     <input
                       type="file"
                       accept="image/*,application/pdf"
                       onChange={handleFileUploadForAi}
                       className="hidden"
+                      disabled={isExtracting}
                     />
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleSimulateAiExtraction}
-                    disabled={isExtracting}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-xs transition-all disabled:opacity-50"
-                  >
-                    {isExtracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    <span>{isExtracting ? 'Extracting Data...' : 'Simulate AI Extraction'}</span>
-                  </button>
                 </div>
               </div>
 

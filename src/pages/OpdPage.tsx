@@ -51,7 +51,7 @@ export default function OpdPage() {
 
   // e-Prescription Form State
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [doctorName, setDoctorName] = useState('Dr. A. Sharma (MBBS, MD)');
+  const [doctorName, setDoctorName] = useState('Attending Physician');
   const [vitals, setVitals] = useState({
     bp: '120/80',
     pulse: 72,
@@ -111,6 +111,11 @@ export default function OpdPage() {
         setConsultations(cData);
         setMedicines(mData);
         setRegisteredDoctors(docsData);
+        if (docsData && docsData.length > 0) {
+          setDoctorName(docsData[0].name);
+        } else if (profile?.name) {
+          setDoctorName(`Dr. ${profile.name}`);
+        }
         if (pharm) setMyPharmacy(pharm);
         setIsOfflineCacheEmpty(false);
 

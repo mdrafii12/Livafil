@@ -149,10 +149,6 @@ export default function ExchangePage() {
   // placeholder for any pharmacy that isn't your own (which correctly shows 0 km).
   const getPharmacyDistance = (pharmacyId: string): number => {
     if (pharmacyId === MY_PHARMACY_ID) return 0;
-    if (pharmacyId === 'phar-apex') return 2.1;
-    if (pharmacyId === 'phar-beacon') return 5.4;
-    if (pharmacyId === 'phar-lifeline') return 11.2;
-    if (pharmacyId === 'phar-stjude') return 16.5;
     // Consistent fallback generator based on ID characters
     let sum = 0;
     for (let i = 0; i < pharmacyId.length; i++) sum += pharmacyId.charCodeAt(i);
